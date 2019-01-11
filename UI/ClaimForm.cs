@@ -51,13 +51,13 @@ namespace Bhp.UI
                 if (bonus_available == Fixed8.Zero) button1.Enabled = false;
                 CalculateBonusUnavailable(snapshot.Height + 1);
             }
-            actor = Program.BhpSystem.ActorSystem.ActorOf(EventWrapper<Blockchain.PersistCompleted>.Props(Blockchain_PersistCompleted));
-            Program.BhpSystem.Blockchain.Tell(new Blockchain.Register(), actor);
+            actor = Program.System.ActorSystem.ActorOf(EventWrapper<Blockchain.PersistCompleted>.Props(Blockchain_PersistCompleted));
+            Program.System.Blockchain.Tell(new Blockchain.Register(), actor);
         }
 
         private void ClaimForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Program.BhpSystem.ActorSystem.Stop(actor);
+            Program.System.ActorSystem.Stop(actor);
         }
 
         private void Blockchain_PersistCompleted(Blockchain.PersistCompleted e)

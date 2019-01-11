@@ -43,7 +43,7 @@ namespace Bhp.UI
             ContractParametersContext context = ContractParametersContext.Parse(textBox2.Text);
             context.Verifiable.Witnesses = context.GetWitnesses();
             IInventory inventory = (IInventory)context.Verifiable;
-            Program.BhpSystem.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
+            Program.System.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
             InformationBox.Show(inventory.Hash.ToString(), Strings.RelaySuccessText, Strings.RelaySuccessTitle);
             button4.Visible = false;
         }

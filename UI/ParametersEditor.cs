@@ -137,7 +137,7 @@ namespace Bhp.UI
                     parameter.Value = s;
                 }
             }
-            else if (ECPoint.TryParse(s, ECCurve.Secp256r1, out ECPoint point))
+            else if (ECPoint.TryParse(s, ECCurve.Secp256, out ECPoint point))
             {
                 parameter.Type = ContractParameterType.PublicKey;
                 parameter.Value = point;

@@ -19,7 +19,7 @@ namespace Bhp.UI
 
         public Contract GetContract()
         {
-            publicKeys = listBox1.Items.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+            publicKeys = listBox1.Items.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256)).ToArray();
             return Contract.CreateMultiSigContract((int)numericUpDown2.Value, publicKeys);
         }
 

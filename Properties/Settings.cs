@@ -80,11 +80,11 @@ namespace Bhp.Properties
 
     internal class ContractSettings
     {
-        public UInt160[] BRC20 { get; }
+        public UInt160[] NEP5 { get; }
 
         public ContractSettings(IConfigurationSection section)
         {
-            this.BRC20 = section.GetSection("BRC20").GetChildren().Select(p => UInt160.Parse(p.Value)).ToArray();
+            this.NEP5 = section.GetSection("NEP5").GetChildren().Select(p => UInt160.Parse(p.Value)).ToArray();
         }
     }
 }

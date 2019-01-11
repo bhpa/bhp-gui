@@ -3,6 +3,7 @@ using Bhp.Cryptography;
 using Bhp.IO;
 using Bhp.IO.Actors;
 using Bhp.Ledger;
+using Bhp.Model;
 using Bhp.Network.P2P;
 using Bhp.Network.P2P.Payloads;
 using Bhp.Persistence;
@@ -36,6 +37,8 @@ namespace Bhp.UI
         private static readonly UInt160 RecycleScriptHash = new[] { (byte)OpCode.PUSHT }.ToScriptHash();
         private bool balance_changed = false;
         private bool check_brc20_balance = false;
+        private bool check_brc5_balance = false;
+
         private DateTime persistence_time = DateTime.MinValue;
         private IActorRef actor;
         private WalletIndexer indexer;
@@ -56,6 +59,11 @@ namespace Bhp.UI
             }
         }
 
+        private string CalcuAmount(Transaction tx)
+        { 
+            return tx.Outputs.Sum(p=>p.Value).ToString() ;
+        }
+
         private void AddAccount(WalletAccount account, bool selected = false)
         {
             ListViewItem item = listView1.Items[account.Address];
@@ -69,7 +77,7 @@ namespace Bhp.UI
             }
             if (item == null)
             {
-                string groupName = account.WatchOnly ? "watchOnlyGroup" : account.Contract.Script.IsStandardContract() ? "standardContractGroup" : "nonstandardContractGroup";
+                string groupName = account.WatchOnly ? "watchOnlyGroup" : account.Contract.Script.IsSignatureContract() ? "standardContractGroup" : "nonstandardContractGroup";
                 item = listView1.Items.Add(new ListViewItem(new[]
                 {
                     new ListViewItem.ListViewSubItem
@@ -95,7 +103,7 @@ namespace Bhp.UI
         }
 
         private void AddTransaction(Transaction tx, uint? height, uint time)
-        { 
+        {
             int? confirmations = (int)Blockchain.Singleton.Height - (int?)height + 1;
             if (confirmations <= 0) confirmations = null;
             string confirmations_str = confirmations?.ToString() ?? Strings.Unconfirmed;
@@ -119,6 +127,11 @@ namespace Bhp.UI
                                 Name = "hash",
                                 Text = txid
                             },
+                             new ListViewItem.ListViewSubItem
+                            {
+                                Name = "amount",
+                                Text = CalcuAmount(tx)
+                            },
                             new ListViewItem.ListViewSubItem
                             {
                                 Name = "confirmations",
@@ -137,12 +150,7 @@ namespace Bhp.UI
                     Name = txid,
                     Tag = height
                 });
-
-                if (listView3.Items.Count > 100)
-                {
-                    listView3.Items.RemoveAt(listView3.Items.Count-1);
-                } 
-            }  
+            }
         }
 
         private void Blockchain_PersistCompleted(Blockchain.PersistCompleted e)
@@ -152,22 +160,12 @@ namespace Bhp.UI
             persistence_time = DateTime.UtcNow;
             if (Program.CurrentWallet != null)
             {
-                check_brc20_balance = true;
+                check_brc5_balance = true;
                 if (Program.CurrentWallet.GetCoins().Any(p => !p.State.HasFlag(CoinState.Spent) && p.Output.AssetId.Equals(Blockchain.GoverningToken.Hash)) == true)
                     balance_changed = true;
             }
 
             //BeginInvoke(new Action(RefreshConfirmations));
-        }
-
-        WalletTxQueue txQueue = new WalletTxQueue();
-        private void AddTxToQueue(Transaction tx, uint height, uint Time)
-        {
-            WalletTx wtx = new WalletTx();
-            wtx.tx = tx;
-            wtx.height = height;
-            wtx.time = Time;
-            txQueue.Push(wtx); 
         }
 
         private void ChangeWallet(Wallet wallet)
@@ -180,46 +178,30 @@ namespace Bhp.UI
             }
             Program.CurrentWallet = wallet;
             listView3.Items.Clear();
+            
             if (Program.CurrentWallet != null)
             {
+                txQueue.Clear();
                 if (backgroundWorker1.IsBusy == false)
                 {
                     backgroundWorker1.RunWorkerAsync();
                     timer2.Enabled = true;
                 }
                 using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
-                {
-                    int txCount = Program.CurrentWallet.GetTransactions().Count();
-                    if (txCount > 1000)
+                    foreach (var i in Program.CurrentWallet.GetTransactions().Select(p => snapshot.Transactions.TryGet(p)).Where(p => p.Transaction != null).Select(p => new
                     {
-                        foreach (var i in Program.CurrentWallet.GetTransactions().Select(p => snapshot.Transactions.TryGet(p)).Where(p => p.Transaction != null && p.BlockIndex >= Blockchain.Singleton.Height-1000).Select(p => new
-                        {
-                            p.Transaction,
-                            p.BlockIndex,
-                            Time = snapshot.GetHeader(p.BlockIndex).Timestamp
-                        }).OrderBy(p => p.Time))
-                        {
-                            AddTxToQueue(i.Transaction, i.BlockIndex, i.Time);                            
-                        } 
-                    }
-                    else
+                        p.Transaction,
+                        p.BlockIndex,
+                        Time = snapshot.GetHeader(p.BlockIndex).Timestamp
+                    }).OrderBy(p => p.Time))
                     {
-                        foreach (var i in Program.CurrentWallet.GetTransactions().Select(p => snapshot.Transactions.TryGet(p)).Where(p => p.Transaction != null).Select(p => new
-                        {
-                            p.Transaction,
-                            p.BlockIndex,
-                            Time = snapshot.GetHeader(p.BlockIndex).Timestamp
-                        }).OrderBy(p => p.Time))
-                        {
-                            AddTransaction(i.Transaction, i.BlockIndex, i.Time); 
-                        }
+                        AddTransaction(i.Transaction, i.BlockIndex, i.Time);
                     }
-                }
                 Program.CurrentWallet.WalletTransaction += CurrentWallet_WalletTransaction;
             }
             修改密码CToolStripMenuItem.Enabled = Program.CurrentWallet is UserWallet;
             交易TToolStripMenuItem.Enabled = Program.CurrentWallet != null;
-            提取BHPCToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            提取小蚁币CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             signDataToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             requestCertificateToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             注册资产RToolStripMenuItem.Enabled = Program.CurrentWallet != null;
@@ -239,15 +221,27 @@ namespace Bhp.UI
                 }
             }
             balance_changed = true;
-            check_brc20_balance = true;
+            check_brc5_balance = true;
         }
-         
+
+        WalletTxQueue txQueue = new WalletTxQueue();
+        private void AddTxToQueue(Transaction tx, uint height, uint Time)
+        {
+            WalletTx wtx = new WalletTx();
+            wtx.tx = tx;
+            wtx.height = height;
+            wtx.time = Time;
+            txQueue.Push(wtx);
+        }
+
         private void CurrentWallet_WalletTransaction(object sender, WalletTransactionEventArgs e)
         {
             balance_changed = true;
             //BeginInvoke(new Action<Transaction, uint?, uint>(AddTransaction), e.Transaction, e.Height, e.Time);
-            if(e.Height!=null)
-            AddTxToQueue(e.Transaction, (uint)e.Height, e.Time);
+            if (e.Height != null)
+            {
+                AddTxToQueue(e.Transaction, (uint)e.Height, e.Time);
+            }
         }
 
         private WalletIndexer GetIndexer()
@@ -270,23 +264,23 @@ namespace Bhp.UI
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            actor = Program.BhpSystem.ActorSystem.ActorOf(EventWrapper<Blockchain.PersistCompleted>.Props(Blockchain_PersistCompleted));
-            Program.BhpSystem.Blockchain.Tell(new Blockchain.Register(), actor);
-            Program.BhpSystem.StartNode(Settings.Default.P2P.Port, Settings.Default.P2P.WsPort);
+            actor = Program.System.ActorSystem.ActorOf(EventWrapper<Blockchain.PersistCompleted>.Props(Blockchain_PersistCompleted));
+            Program.System.Blockchain.Tell(new Blockchain.Register(), actor);
+            Program.System.StartNode(Settings.Default.P2P.Port, Settings.Default.P2P.WsPort);
         }
 
         bool WindowsClosed = false;
-
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
-        {
+        { 
             if (MessageBox.Show("Are you sure exit?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 WindowsClosed = true;
                 backgroundWorker1.CancelAsync();
 
                 if (actor != null)
-                    Program.BhpSystem.ActorSystem.Stop(actor);
+                    Program.System.ActorSystem.Stop(actor);
                 ChangeWallet(null);
+                
             }
             else
             {
@@ -294,14 +288,8 @@ namespace Bhp.UI
             }
         }
 
-        bool timer1Working = false;
-
         private void timer1_Tick(object sender, EventArgs e)
         {
-            if (timer1Working) return;
-
-            timer1Working = true;
-
             uint walletHeight = 0;
 
             if (Program.CurrentWallet != null)
@@ -322,8 +310,213 @@ namespace Bhp.UI
             {
                 toolStripProgressBar1.Value = persistence_span.Seconds;
                 toolStripProgressBar1.Style = ProgressBarStyle.Blocks;
-            } 
-            timer1Working = false;
+            }
+            if (Program.CurrentWallet != null)
+            {
+                if (Program.CurrentWallet.WalletHeight <= Blockchain.Singleton.Height + 1)
+                {
+                    if (balance_changed)
+                        using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                        {
+                            IEnumerable<Coin> coins = Program.CurrentWallet?.GetCoins().Where(p => !p.State.HasFlag(CoinState.Spent)) ?? Enumerable.Empty<Coin>();
+                            Fixed8 bonus_available = snapshot.CalculateBonus(Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Reference));
+                            Fixed8 bonus_unavailable = snapshot.CalculateBonus(coins.Where(p => p.State.HasFlag(CoinState.Confirmed) && p.Output.AssetId.Equals(Blockchain.GoverningToken.Hash)).Select(p => p.Reference), snapshot.Height + 1);
+                            Fixed8 bonus = bonus_available + bonus_unavailable;
+                            var assets = coins.GroupBy(p => p.Output.AssetId, (k, g) => new
+                            {
+                                Asset = snapshot.Assets.TryGet(k),
+                                Value = g.Sum(p => p.Output.Value),
+                                Claim = k.Equals(Blockchain.UtilityToken.Hash) ? bonus : Fixed8.Zero
+                            }).ToDictionary(p => p.Asset.AssetId);
+                            if (bonus != Fixed8.Zero && !assets.ContainsKey(Blockchain.UtilityToken.Hash))
+                            {
+                                assets[Blockchain.UtilityToken.Hash] = new
+                                {
+                                    Asset = snapshot.Assets.TryGet(Blockchain.UtilityToken.Hash),
+                                    Value = Fixed8.Zero,
+                                    Claim = bonus
+                                };
+                            }
+                            var balance_ans = coins.Where(p => p.Output.AssetId.Equals(Blockchain.GoverningToken.Hash)).GroupBy(p => p.Output.ScriptHash).ToDictionary(p => p.Key, p => p.Sum(i => i.Output.Value));
+                            var balance_anc = coins.Where(p => p.Output.AssetId.Equals(Blockchain.UtilityToken.Hash)).GroupBy(p => p.Output.ScriptHash).ToDictionary(p => p.Key, p => p.Sum(i => i.Output.Value));
+                            foreach (ListViewItem item in listView1.Items)
+                            {
+                                UInt160 script_hash = item.Name.ToScriptHash();
+                                Fixed8 ans = balance_ans.ContainsKey(script_hash) ? balance_ans[script_hash] : Fixed8.Zero;
+                                Fixed8 anc = balance_anc.ContainsKey(script_hash) ? balance_anc[script_hash] : Fixed8.Zero;
+                                item.SubItems["ans"].Text = ans.ToString();
+                                item.SubItems["anc"].Text = anc.ToString();
+                            }
+                            foreach (AssetState asset in listView2.Items.OfType<ListViewItem>().Select(p => p.Tag as AssetState).Where(p => p != null).ToArray())
+                            {
+                                if (!assets.ContainsKey(asset.AssetId))
+                                {
+                                    listView2.Items.RemoveByKey(asset.AssetId.ToString());
+                                }
+                            }
+                            foreach (var asset in assets.Values)
+                            {
+                                string value_text = asset.Value.ToString() + (asset.Asset.AssetId.Equals(Blockchain.UtilityToken.Hash) ? $"+({asset.Claim})" : "");
+                                if (listView2.Items.ContainsKey(asset.Asset.AssetId.ToString()))
+                                {
+                                    listView2.Items[asset.Asset.AssetId.ToString()].SubItems["value"].Text = value_text;
+                                }
+                                else
+                                {
+                                    string asset_name = asset.Asset.AssetType == AssetType.GoverningToken ? "BHP" :
+                                                        asset.Asset.AssetType == AssetType.UtilityToken ? "BHPGas" :
+                                                        asset.Asset.GetName();
+                                    listView2.Items.Add(new ListViewItem(new[]
+                                    {
+                                        new ListViewItem.ListViewSubItem
+                                        {
+                                            Name = "name",
+                                            Text = asset_name
+                                        },
+                                        new ListViewItem.ListViewSubItem
+                                        {
+                                            Name = "type",
+                                            Text = asset.Asset.AssetType.ToString()
+                                        },
+                                        new ListViewItem.ListViewSubItem
+                                        {
+                                            Name = "value",
+                                            Text = value_text
+                                        },
+                                        new ListViewItem.ListViewSubItem
+                                        {
+                                            ForeColor = Color.Gray,
+                                            Name = "issuer",
+                                            Text = $"{Strings.UnknownIssuer}[{asset.Asset.Owner}]"
+                                        }
+                                    }, -1, listView2.Groups["unchecked"])
+                                    {
+                                        Name = asset.Asset.AssetId.ToString(),
+                                        Tag = asset.Asset,
+                                        UseItemStyleForSubItems = false
+                                    });
+                                }
+                            }
+                            balance_changed = false;
+                        }
+                    foreach (ListViewItem item in listView2.Groups["unchecked"].Items.OfType<ListViewItem>().ToArray())
+                    {
+                        ListViewItem.ListViewSubItem subitem = item.SubItems["issuer"];
+                        AssetState asset = (AssetState)item.Tag;
+                        CertificateQueryResult result;
+                        if (asset.AssetType == AssetType.GoverningToken || asset.AssetType == AssetType.UtilityToken)
+                        {
+                            result = new CertificateQueryResult { Type = CertificateQueryResultType.System };
+                        }
+                        else
+                        {
+                            result = CertificateQueryService.Query(asset.Owner);
+                        }
+                        using (result)
+                        {
+                            subitem.Tag = result.Type;
+                            switch (result.Type)
+                            {
+                                case CertificateQueryResultType.Querying:
+                                case CertificateQueryResultType.QueryFailed:
+                                    break;
+                                case CertificateQueryResultType.System:
+                                    subitem.ForeColor = Color.Green;
+                                    subitem.Text = Strings.SystemIssuer;
+                                    break;
+                                case CertificateQueryResultType.Invalid:
+                                    subitem.ForeColor = Color.Red;
+                                    subitem.Text = $"[{Strings.InvalidCertificate}][{asset.Owner}]";
+                                    break;
+                                case CertificateQueryResultType.Expired:
+                                    subitem.ForeColor = Color.Yellow;
+                                    subitem.Text = $"[{Strings.ExpiredCertificate}]{result.Certificate.Subject}[{asset.Owner}]";
+                                    break;
+                                case CertificateQueryResultType.Good:
+                                    subitem.ForeColor = Color.Black;
+                                    subitem.Text = $"{result.Certificate.Subject}[{asset.Owner}]";
+                                    break;
+                            }
+                            switch (result.Type)
+                            {
+                                case CertificateQueryResultType.System:
+                                case CertificateQueryResultType.Missing:
+                                case CertificateQueryResultType.Invalid:
+                                case CertificateQueryResultType.Expired:
+                                case CertificateQueryResultType.Good:
+                                    item.Group = listView2.Groups["checked"];
+                                    break;
+                            }
+                        }
+                    }
+                }
+                if (check_brc5_balance && persistence_span > TimeSpan.FromSeconds(2))
+                {
+                    UInt160[] addresses = Program.CurrentWallet.GetAccounts().Select(p => p.ScriptHash).ToArray();
+                    foreach (string s in Settings.Default.BRC20Watched)
+                    {
+                        UInt160 script_hash = UInt160.Parse(s);
+                        byte[] script;
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                        {
+                            foreach (UInt160 address in addresses)
+                                sb.EmitAppCall(script_hash, "balanceOf", address);
+                            sb.Emit(OpCode.DEPTH, OpCode.PACK);
+                            sb.EmitAppCall(script_hash, "decimals");
+                            sb.EmitAppCall(script_hash, "name");
+                            script = sb.ToArray();
+                        }
+                        ApplicationEngine engine = ApplicationEngine.Run(script);
+                        if (engine.State.HasFlag(VMState.FAULT)) continue;
+                        string name = engine.ResultStack.Pop().GetString();
+                        byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
+                        BigInteger amount = ((VMArray)engine.ResultStack.Pop()).Aggregate(BigInteger.Zero, (x, y) => x + y.GetBigInteger());
+                        if (amount == 0)
+                        {
+                            listView2.Items.RemoveByKey(script_hash.ToString());
+                            continue;
+                        }
+                        BigDecimal balance = new BigDecimal(amount, decimals);
+                        string value_text = balance.ToString();
+                        if (listView2.Items.ContainsKey(script_hash.ToString()))
+                        {
+                            listView2.Items[script_hash.ToString()].SubItems["value"].Text = value_text;
+                        }
+                        else
+                        {
+                            listView2.Items.Add(new ListViewItem(new[]
+                            {
+                                new ListViewItem.ListViewSubItem
+                                {
+                                    Name = "name",
+                                    Text = name
+                                },
+                                new ListViewItem.ListViewSubItem
+                                {
+                                    Name = "type",
+                                    Text = "BRC20"
+                                },
+                                new ListViewItem.ListViewSubItem
+                                {
+                                    Name = "value",
+                                    Text = value_text
+                                },
+                                new ListViewItem.ListViewSubItem
+                                {
+                                    ForeColor = Color.Gray,
+                                    Name = "issuer",
+                                    Text = $"ScriptHash:{script_hash}"
+                                }
+                            }, -1, listView2.Groups["checked"])
+                            {
+                                Name = script_hash.ToString(),
+                                UseItemStyleForSubItems = false
+                            });
+                        }
+                    }
+                    check_brc5_balance = false;
+                }
+            }
         }
 
         private void 创建钱包数据库NToolStripMenuItem_Click(object sender, EventArgs e)
@@ -465,7 +658,7 @@ namespace Bhp.UI
             }
         }
 
-        private void 提取BHPCToolStripMenuItem_Click(object sender, EventArgs e)
+        private void 提取小蚁币CToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Helper.Show<ClaimForm>();
         }
@@ -555,7 +748,7 @@ namespace Bhp.UI
 
         private void 官网WToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start("https://bhpa.io/");
+            Process.Start("https://exp.bhp.io/");
         }
 
         private void 开发人员工具TToolStripMenuItem_Click(object sender, EventArgs e)
@@ -573,7 +766,7 @@ namespace Bhp.UI
             查看私钥VToolStripMenuItem.Enabled =
                 listView1.SelectedIndices.Count == 1 &&
                 !((WalletAccount)listView1.SelectedItems[0].Tag).WatchOnly &&
-                ((WalletAccount)listView1.SelectedItems[0].Tag).Contract.Script.IsStandardContract();
+                ((WalletAccount)listView1.SelectedItems[0].Tag).Contract.Script.IsSignatureContract();
             viewContractToolStripMenuItem.Enabled =
                 listView1.SelectedIndices.Count == 1 &&
                 !((WalletAccount)listView1.SelectedItems[0].Tag).WatchOnly;
@@ -762,8 +955,8 @@ namespace Bhp.UI
             }
             if (Program.CurrentWallet is BRC6Wallet wallet)
                 wallet.Save();
-            //balance_changed = true;
-            check_brc20_balance = true;
+            balance_changed = true;
+            check_brc5_balance = true;
         }
 
         private void contextMenuStrip2_Opening(object sender, CancelEventArgs e)
@@ -850,30 +1043,27 @@ namespace Bhp.UI
             }
         }
 
-        private void refreshTransactionToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //BeginInvoke(new Action(RefreshConfirmations));
-        }
-
         private bool timer2Working = false;
         private void timer2_Tick(object sender, EventArgs e)
         {
-            if (timer2Working==false)
+            if (timer2Working)
             {
-                timer2Working = true;
-                WalletTx wtx;
-                if(txQueue.Pop(out wtx))
-                {
-                    AddTransaction(wtx.tx, wtx.height, wtx.time);
-                    if(wtx.height >= Blockchain.Singleton.Height)
-                    {
-                        timer2.Enabled = false;
-                        timer2.Interval = 1000;
-                        timer2.Enabled = true;
-                    }
-                }
-                timer2Working = false;
+                return;
             }
+
+            timer2Working = true;
+            WalletTx wtx;
+            if (txQueue.Pop(out wtx))
+            {
+                AddTransaction(wtx.tx, wtx.height, wtx.time);
+                if (wtx.height >= Blockchain.Singleton.Height)
+                {
+                    timer2.Enabled = false;
+                    timer2.Interval = 1000;
+                    timer2.Enabled = true;
+                }
+            }
+            timer2Working = false;
         }
 
         //-------------------------------------------------
@@ -934,14 +1124,14 @@ namespace Bhp.UI
                                 Fixed8 ans = balance_ans.ContainsKey(script_hash) ? balance_ans[script_hash] : Fixed8.Zero;
                                 Fixed8 anc = balance_anc.ContainsKey(script_hash) ? balance_anc[script_hash] : Fixed8.Zero;
                                 item.SubItems["ans"].Text = ans.ToString();
-                                item.SubItems["anc"].Text = anc.ToString(); 
+                                item.SubItems["anc"].Text = anc.ToString();
                             }
                             foreach (AssetState asset in listView2.Items.OfType<ListViewItem>().Select(p => p.Tag as AssetState).Where(p => p != null).ToArray())
                             {
                                 if (!assets.ContainsKey(asset.AssetId))
                                 {
                                     listView2.Items.RemoveByKey(asset.AssetId.ToString());
-                                } 
+                                }
                             }
                             foreach (var asset in assets.Values)
                             {
@@ -984,7 +1174,7 @@ namespace Bhp.UI
                                         Tag = asset.Asset,
                                         UseItemStyleForSubItems = false
                                     });
-                                } 
+                                }
                             }
                             balance_changed = false;
                         }
@@ -1036,7 +1226,7 @@ namespace Bhp.UI
                                     item.Group = listView2.Groups["checked"];
                                     break;
                             }
-                        }                        
+                        }
                     }
                 }
                 if (check_brc20_balance && persistence_span > TimeSpan.FromSeconds(2))
@@ -1108,15 +1298,9 @@ namespace Bhp.UI
             }
         }
 
-        private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-            ShowWalletInfo();
-            RefreshConfirmations();
-        }
-
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
-            while (IsDisposed==false && WindowsClosed==false)
+            while (IsDisposed == false && WindowsClosed == false)
             {
                 using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                 {
@@ -1135,14 +1319,10 @@ namespace Bhp.UI
             高级AToolStripMenuItem.Visible = "1".Equals(Settings.Default.Configs.Development);
         }
 
-        private void toolStripTextBox1_Click(object sender, EventArgs e)
+        private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-
-        }
-
-        private void claimBHPGasToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Helper.Show<ClaimForm>();
+            ShowWalletInfo();
+            RefreshConfirmations();
         }
     }
 }

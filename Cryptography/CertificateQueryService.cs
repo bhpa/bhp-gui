@@ -95,7 +95,7 @@ namespace Bhp.Cryptography
                 results[hash].Type = CertificateQueryResultType.Missing;
                 return;
             }
-            if (!hash.Equals(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(cert.PublicKey.EncodedKeyValue.RawData, ECCurve.Secp256r1)).ToScriptHash()))
+            if (!hash.Equals(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(cert.PublicKey.EncodedKeyValue.RawData, ECCurve.Secp256)).ToScriptHash()))
             {
                 results[hash].Type = CertificateQueryResultType.Missing;
                 return;

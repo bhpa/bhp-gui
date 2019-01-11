@@ -88,7 +88,7 @@ namespace Bhp.UI
         {
             context.Verifiable.Witnesses = context.GetWitnesses();
             IInventory inventory = (IInventory)context.Verifiable;
-            RelayResultReason reason = Program.BhpSystem.Blockchain.Ask<RelayResultReason>(inventory).Result;
+            RelayResultReason reason = Program.System.Blockchain.Ask<RelayResultReason>(inventory).Result;
             if (reason == RelayResultReason.Succeed)
             {
                 InformationBox.Show(inventory.Hash.ToString(), Strings.RelaySuccessText, Strings.RelaySuccessTitle);

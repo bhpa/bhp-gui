@@ -156,7 +156,7 @@ namespace Bhp.UI
                 context.Verifiable.Witnesses = context.GetWitnesses();
                 ContractTransaction tx = (ContractTransaction)context.Verifiable;
                 Program.CurrentWallet.ApplyTransaction(tx);
-                Program.BhpSystem.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
+                Program.System.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
                 InformationBox.Show(tx.Hash.ToString(), Strings.TradeSuccessMessage, Strings.TradeSuccessCaption);
             }
             else

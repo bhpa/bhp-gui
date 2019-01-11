@@ -16,7 +16,7 @@ namespace Bhp
 {
     internal static class Program
     {
-        public static BhpSystem BhpSystem;
+        public static BhpSystem System;
         public static Wallet CurrentWallet;
         public static MainForm MainForm;
 
@@ -86,11 +86,10 @@ namespace Bhp
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             XDocument xdoc = null;
-
-            /* 
+            /*
             try
             {
-                xdoc = XDocument.Load("https://bhpa.io/client/update.xml");
+                xdoc = XDocument.Load("https://bhp.io/client/update.xml");
             }
             catch { }
             if (xdoc != null)
@@ -108,9 +107,8 @@ namespace Bhp
             }
             if (!InstallCertificate()) return;
             */
-
             using (LevelDBStore store = new LevelDBStore(Settings.Default.Paths.Chain))
-            using (BhpSystem = new BhpSystem(store))
+            using (System = new BhpSystem(store))
             {
                 Application.Run(MainForm = new MainForm(xdoc));
             }

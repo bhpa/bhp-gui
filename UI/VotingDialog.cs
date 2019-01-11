@@ -24,7 +24,7 @@ namespace Bhp.UI
                         Type = StateType.Account,
                         Key = script_hash.ToArray(),
                         Field = "Votes",
-                        Value = textBox1.Lines.Select(p => ECPoint.Parse(p, ECCurve.Secp256r1)).ToArray().ToByteArray()
+                        Value = textBox1.Lines.Select(p => ECPoint.Parse(p, ECCurve.Secp256)).ToArray().ToByteArray()
                     }
                 }
             });
