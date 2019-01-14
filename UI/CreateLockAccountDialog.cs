@@ -18,12 +18,15 @@ namespace Bhp.UI
         public Contract GetContract()
         {
             uint timestamp = dateTimePicker1.Value.ToTimestamp();
+
+            if (dateTimePicker1.Value <= DateTime.Now) return null;//BY BHP
+
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.EmitPush(GetKey().PublicKey);
                 sb.EmitPush(timestamp);
                 // Lock 2.0 in mainnet tx:4e84015258880ced0387f34842b1d96f605b9cc78b308e1f0d876933c2c9134b
-                sb.EmitAppCall(UInt160.Parse("d3cce84d0800172d09c88ccad61130611bd047a4"));
+                sb.EmitAppCall(UInt160.Parse("0xdc5f72c06e6ea9dbacd8ddf7bd80f92683966081"));
                 return Contract.Create(new[] { ContractParameterType.Signature }, sb.ToArray());
             }
         }

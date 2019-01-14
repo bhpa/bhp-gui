@@ -30,6 +30,7 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TransferDialog));
             this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.btn_lock = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
             this.txOutListBox1 = new Bhp.UI.TxOutListBox();
             this.button4 = new System.Windows.Forms.Button();
@@ -47,10 +48,18 @@
             // groupBox3
             // 
             resources.ApplyResources(this.groupBox3, "groupBox3");
+            this.groupBox3.Controls.Add(this.btn_lock);
             this.groupBox3.Controls.Add(this.button1);
             this.groupBox3.Controls.Add(this.txOutListBox1);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.TabStop = false;
+            // 
+            // btn_lock
+            // 
+            resources.ApplyResources(this.btn_lock, "btn_lock");
+            this.btn_lock.Name = "btn_lock";
+            this.btn_lock.UseVisualStyleBackColor = true;
+            this.btn_lock.Click += new System.EventHandler(this.btn_lock_Click);
             // 
             // button1
             // 
@@ -153,5 +162,6 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.ComboBox comboBox1;
+        private System.Windows.Forms.Button btn_lock;
     }
 }

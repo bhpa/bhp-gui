@@ -46,6 +46,15 @@ namespace Bhp.UI
             }).ToArray();
             Transaction tx;
             List<TransactionAttribute> attributes = new List<TransactionAttribute>();
+
+            if (LockAttribute != null)//by bhp lock utxo
+            {
+                if (MessageBox.Show("确认锁仓？", "提示", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK)
+                {
+                    attributes.Add(LockAttribute);
+                }
+            }
+
             if (cOutputs.Length == 0)
             {
                 tx = new ContractTransaction();
@@ -143,6 +152,26 @@ namespace Bhp.UI
             button2.Visible = false;
             groupBox1.Visible = true;
             this.Height = 510;
+        }
+
+        TransactionAttribute LockAttribute = null;
+        DateTime lockTime = new DateTime();
+        private void btn_lock_Click(object sender, EventArgs e)
+        {
+            using (LockUTXODialog dialog = new LockUTXODialog(lockTime))
+            {
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    if (dialog.GetUXTOLockTime <= DateTime.Now)
+                    {
+                        MessageBox.Show(Strings.LockTime);
+                        return;
+                    }
+                    lockTime = dialog.GetUXTOLockTime;
+                    TransactionContract transactionContract = new TransactionContract();
+                    LockAttribute = transactionContract.MakeLockTransactionScript(lockTime.ToTimestamp());
+                }
+            }
         }
     }
 }
