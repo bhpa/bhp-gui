@@ -757,8 +757,8 @@
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="1.1.11" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\bhp-vm\src\bhp-vm\bhp-vm.csproj">
-      <Project>{6ee17bf8-3e48-4b89-8742-857f72d9fe49}</Project>
+    <ProjectReference Include="..\bhp-vm\bhp-vm\bhp-vm.csproj">
+      <Project>{e29a5a5f-e346-4d7e-9c83-d4771e86698f}</Project>
       <Name>bhp-vm</Name>
     </ProjectReference>
     <ProjectReference Include="..\bhp\bhp\bhp.csproj">
