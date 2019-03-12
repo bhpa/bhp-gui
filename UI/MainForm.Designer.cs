@@ -81,6 +81,7 @@
             this.创建智能合约SToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.多方签名MToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.lockToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.destroyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator12 = new System.Windows.Forms.ToolStripSeparator();
             this.自定义CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
@@ -472,6 +473,7 @@
             this.创建智能合约SToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.多方签名MToolStripMenuItem,
             this.lockToolStripMenuItem,
+            this.destroyToolStripMenuItem,
             this.toolStripSeparator12,
             this.自定义CToolStripMenuItem});
             resources.ApplyResources(this.创建智能合约SToolStripMenuItem, "创建智能合约SToolStripMenuItem");
@@ -488,6 +490,12 @@
             this.lockToolStripMenuItem.Name = "lockToolStripMenuItem";
             resources.ApplyResources(this.lockToolStripMenuItem, "lockToolStripMenuItem");
             this.lockToolStripMenuItem.Click += new System.EventHandler(this.lockToolStripMenuItem_Click);
+            // 
+            // destroyToolStripMenuItem
+            // 
+            this.destroyToolStripMenuItem.Name = "destroyToolStripMenuItem";
+            resources.ApplyResources(this.destroyToolStripMenuItem, "destroyToolStripMenuItem");
+            this.destroyToolStripMenuItem.Click += new System.EventHandler(this.destroyToolStripMenuItem_Click);
             // 
             // toolStripSeparator12
             // 
@@ -869,7 +877,8 @@
         private System.Windows.Forms.ColumnHeader columnHeader12;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator13;
-        private System.Windows.Forms.ToolStripMenuItem claToolStripMenuItem;        
+        private System.Windows.Forms.ToolStripMenuItem claToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem destroyToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel lb_tx_time;
         private System.Windows.Forms.ToolStripMenuItem 零钱规整AToolStripMenuItem;
     }
