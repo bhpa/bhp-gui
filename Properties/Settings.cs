@@ -36,7 +36,7 @@ namespace Bhp.Properties
         public AppConfigs(IConfigurationSection section)
         {
             Development = section.GetSection("Development").Value;
-            LastestTxDay = int.Parse(section.GetSection("Development").Value);
+            LastestTxDay = int.Parse(section.GetSection("LastestTxDay").Value);
         }
     }
 
