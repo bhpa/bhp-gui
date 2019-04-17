@@ -782,7 +782,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\bhp-vm\bhp-vm\bhp-vm.csproj">
-      <Project>{e29a5a5f-e346-4d7e-9c83-d4771e86698f}</Project>
+      <Project>{273e3ddc-7c97-4824-9143-71b9cdcb1bfd}</Project>
       <Name>bhp-vm</Name>
     </ProjectReference>
     <ProjectReference Include="..\bhp\bhp\bhp.csproj">
