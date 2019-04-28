@@ -91,12 +91,11 @@ namespace Bhp.UI
                 MessageBox.Show("Only support to broadcast transaction.");
                 return;
             }
-            tx.Witnesses = context.GetWitnesses();
-            IInventory inventory = (IInventory)context.Verifiable;
-            RelayResultReason reason = Program.System.Blockchain.Ask<RelayResultReason>(inventory).Result;
+            tx.Witnesses = context.GetWitnesses();            
+            RelayResultReason reason = Program.System.Blockchain.Ask<RelayResultReason>(tx).Result;
             if (reason == RelayResultReason.Succeed)
             {
-                InformationBox.Show(inventory.Hash.ToString(), Strings.RelaySuccessText, Strings.RelaySuccessTitle);
+                InformationBox.Show(tx.Hash.ToString(), Strings.RelaySuccessText, Strings.RelaySuccessTitle);
             }
             else
             {

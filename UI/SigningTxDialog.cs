@@ -46,9 +46,9 @@ namespace Bhp.UI
                 MessageBox.Show("Only support to broadcast transaction.");
                 return;
             }
-            IInventory inventory = (IInventory)context.Verifiable;
-            Program.System.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
-            InformationBox.Show(inventory.Hash.ToString(), Strings.RelaySuccessText, Strings.RelaySuccessTitle);
+            tx.Witnesses = context.GetWitnesses();
+            Program.System.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
+            InformationBox.Show(tx.Hash.ToString(), Strings.RelaySuccessText, Strings.RelaySuccessTitle);
             button4.Visible = false;
         }
     }
