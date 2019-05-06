@@ -82,7 +82,10 @@ namespace Bhp.UI
             if (parameters.Any(p => p.Value == null)) return;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitAppCall(script_hash, parameters);
+                for (int i = parameters.Length - 1; i >= 0; i--)
+                    sb.EmitPush(parameters[i]);
+                sb.EmitPush(script_hash);                
+                sb.EmitSysCall("System.Contract.Call");
                 textBox6.Text = sb.ToArray().ToHexString();
             }
         }
