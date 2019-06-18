@@ -35,16 +35,38 @@ namespace Bhp.UI
 
         public InvocationTransaction GetTransaction()
         {
-            Fixed8 fee = tx.Gas.Equals(Fixed8.Zero) ? net_fee : Fixed8.Zero;
-            return Program.CurrentWallet.MakeTransaction(new InvocationTransaction
+            Fixed8 fee = Fixed8.Zero;
+            if (tx.Size > 1024)               
             {
-                Version = tx.Version,
-                Script = tx.Script,
-                Gas = tx.Gas,
-                Attributes = tx.Attributes,
-                Inputs = tx.Inputs,
-                Outputs = tx.Outputs
-            }, fee: fee);
+                fee += Fixed8.FromDecimal(tx.Size * 0.00001m);
+            }
+            if (Helper.CostRemind(tx.Gas.Ceiling(), fee, Fixed8.FromDecimal(0.001m)))
+            {
+                Fixed8 sumFee = fee + Fixed8.FromDecimal(0.001m);
+                InvocationTransaction result = Program.CurrentWallet.MakeTransaction(new InvocationTransaction
+                {
+                    Version = tx.Version,
+                    Script = tx.Script,
+                    Gas = tx.Gas,
+                    Attributes = tx.Attributes,
+                    Inputs = tx.Inputs,
+                    Outputs = tx.Outputs
+                }, fee: sumFee);
+                return result;
+            }
+            else
+            {
+                InvocationTransaction result = Program.CurrentWallet.MakeTransaction(new InvocationTransaction
+                {
+                    Version = tx.Version,
+                    Script = tx.Script,
+                    Gas = tx.Gas,
+                    Attributes = tx.Attributes,
+                    Inputs = tx.Inputs,
+                    Outputs = tx.Outputs
+                }, fee: fee);
+                return result;
+            }
         }
 
         public InvocationTransaction GetTransaction(UInt160 change_address, Fixed8 fee)
@@ -142,7 +164,7 @@ namespace Bhp.UI
             if (tx.Attributes == null) tx.Attributes = new TransactionAttribute[0];
             if (tx.Inputs == null) tx.Inputs = new CoinReference[0];
             if (tx.Outputs == null) tx.Outputs = new TransactionOutput[0];
-            if (tx.Witnesses == null) tx.Witnesses = new Witness[0];
+            if (tx.Witness == null) tx.Witness = new Witness;
             ApplicationEngine engine = ApplicationEngine.Run(tx.Script, tx, testMode: true);
             StringBuilder sb = new StringBuilder();
             sb.AppendLine($"VM State: {engine.State}");
@@ -151,10 +173,10 @@ namespace Bhp.UI
             textBox7.Text = sb.ToString();
             if (!engine.State.HasFlag(VMState.FAULT))
             {
-                tx.Gas = engine.GasConsumed - Fixed8.FromDecimal(10);
+                tx.Gas =  Fixed8.Parse((engine.GasConsumed - 10).ToString());
                 if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
                 tx.Gas = tx.Gas.Ceiling();
-                Fixed8 fee = tx.Gas.Equals(Fixed8.Zero) ? net_fee : tx.Gas;
+                Fixed8 fee = tx.Gas;
                 label7.Text = fee + " gas";
                 button3.Enabled = true;
             }

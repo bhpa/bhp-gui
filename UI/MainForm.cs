@@ -21,6 +21,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -275,7 +276,12 @@ namespace Bhp.UI
         private void MainForm_Load(object sender, EventArgs e)
         {
             actor = Program.System.ActorSystem.ActorOf(EventWrapper<Blockchain.PersistCompleted>.Props(Blockchain_PersistCompleted));
-            Program.System.StartNode(Settings.Default.P2P.Port, Settings.Default.P2P.WsPort);
+            ChannelsConfig config = new ChannelsConfig
+            {
+                Tcp = new IPEndPoint(IPAddress.Any, Settings.Default.P2P.Port),
+                WebSocket = new IPEndPoint(IPAddress.Any, Settings.Default.P2P.WsPort)
+            };
+            Program.System.StartNode(config);
         }
 
         bool WindowsClosed = false;
@@ -709,7 +715,14 @@ namespace Bhp.UI
             using (IssueDialog dialog = new IssueDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                Helper.SignAndShowInformation(dialog.GetTransaction());
+                try
+                {
+                    Helper.SignAndShowInformation(dialog.GetTransaction());
+                }
+                catch (Exception ex)
+                {
+                    return;
+                }
             }
         }
 
@@ -734,7 +747,15 @@ namespace Bhp.UI
             using (InvokeContractDialog dialog = new InvokeContractDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                Helper.SignAndShowInformation(dialog.GetTransaction());
+                try
+                {
+                    Helper.SignAndShowInformation(dialog.GetTransaction());
+                }
+                catch (Exception ex)
+                {
+                    return;
+                }
+
             }
         }
 
@@ -743,7 +764,15 @@ namespace Bhp.UI
             using (ElectionDialog dialog = new ElectionDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                Helper.SignAndShowInformation(dialog.GetTransaction());
+                try
+                {
+                    Helper.SignAndShowInformation(dialog.GetTransaction());
+                }
+                catch (Exception ex)
+                {
+                    return;
+                }
+
             }
         }
 
@@ -948,7 +977,14 @@ namespace Bhp.UI
             using (VotingDialog dialog = new VotingDialog(account.ScriptHash))
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                Helper.SignAndShowInformation(dialog.GetTransaction());
+                try
+                {
+                    Helper.SignAndShowInformation(dialog.GetTransaction());
+                }
+                catch (Exception ex)
+                {
+                    return;
+                }
             }
         }
 
