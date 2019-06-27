@@ -164,7 +164,7 @@ namespace Bhp.UI
             if (tx.Attributes == null) tx.Attributes = new TransactionAttribute[0];
             if (tx.Inputs == null) tx.Inputs = new CoinReference[0];
             if (tx.Outputs == null) tx.Outputs = new TransactionOutput[0];
-            if (tx.Witness == null) tx.Witness = new Witness;
+            if (tx.Witnesses == null) tx.Witnesses = new Witness[0];
             ApplicationEngine engine = ApplicationEngine.Run(tx.Script, tx, testMode: true);
             StringBuilder sb = new StringBuilder();
             sb.AppendLine($"VM State: {engine.State}");

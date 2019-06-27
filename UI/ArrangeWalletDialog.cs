@@ -107,12 +107,12 @@ namespace Bhp.UI
                     Value = sum
 
                 });
-                if (tx.SystemFee > Fixed8.Zero)
+                if (tx.SystemFee > 0)
                 {
                     outputs.Add(new TransactionOutput
                     {
                         AssetId = Blockchain.UtilityToken.Hash,
-                        Value = tx.SystemFee
+                        Value = Fixed8.Parse(tx.SystemFee.ToString())
                     });
                 }
                 tx.Outputs = outputs.ToArray();

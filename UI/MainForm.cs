@@ -59,7 +59,7 @@ namespace Bhp.UI
                     toolStripStatusLabel3.Visible = true;
                 }
             }
-        }  
+        }
 
         private void AddAccount(WalletAccount account, bool selected = false)
         {
@@ -145,7 +145,6 @@ namespace Bhp.UI
                                 Text = tx.Type.ToString()
                             }
                             //end
-
                         }, -1)
                 {
                     Name = txid,
@@ -179,7 +178,7 @@ namespace Bhp.UI
             }
             Program.CurrentWallet = wallet;
             listView3.Items.Clear();
-            
+
             if (Program.CurrentWallet != null)
             {
                 txQueue.Clear();
@@ -237,7 +236,7 @@ namespace Bhp.UI
                 wtx.height = height;
                 wtx.time = Time;
                 txQueue.Push(wtx);
-            } 
+            }
         }
 
         private void CurrentWallet_WalletTransaction(object sender, WalletTransactionEventArgs e)
@@ -286,15 +285,15 @@ namespace Bhp.UI
 
         bool WindowsClosed = false;
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
-        { 
+        {
             if (MessageBox.Show("Are you sure exit?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 WindowsClosed = true;
-                backgroundWorker1.CancelAsync(); 
+                backgroundWorker1.CancelAsync();
 
                 if (actor != null)
                     Program.System.ActorSystem.Stop(actor);
-                ChangeWallet(null);                
+                ChangeWallet(null);
             }
             else
             {
@@ -772,7 +771,6 @@ namespace Bhp.UI
                 {
                     return;
                 }
-
             }
         }
 
@@ -1099,13 +1097,13 @@ namespace Bhp.UI
 
         private bool IsShowTx(uint Time, out DateTime dateTime)
         {
-            DateTime dtStart = TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1));          
+            DateTime dtStart = TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1));
             dateTime = dtStart.AddSeconds(Time);
 
             TimeSpan time = DateTime.Now - dateTime;
             //return (time.TotalDays <= 3);
             return (time.TotalDays <= Settings.Default.Configs.LastestTxDay);
-        } 
+        }
 
         //-------------------------------------------------
         IEnumerable<Coin> coins;
@@ -1338,7 +1336,7 @@ namespace Bhp.UI
                 }
             }
         }
-    
+
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
             while (IsDisposed == false && WindowsClosed == false)
@@ -1352,16 +1350,16 @@ namespace Bhp.UI
                     WalletTx wtx = new WalletTx()
                     {
                         height = 0
-                    }; 
+                    };
 
                     if (txQueue.Pop(out wtx))
                     {
-                        backgroundWorker1.ReportProgress(1, wtx); 
-                    }  
-                    Thread.Sleep(1000); 
+                        backgroundWorker1.ReportProgress(1, wtx);
+                    }
+                    Thread.Sleep(1000);
                 }
             }
-        } 
+        }
 
         bool showingWalletInfo = false;
         private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -1383,13 +1381,13 @@ namespace Bhp.UI
             //}
 
             showingWalletInfo = true;
-            
-            AddTransaction(wtx.tx, wtx.height, wtx.time);            
+
+            AddTransaction(wtx.tx, wtx.height, wtx.time);
             ShowWalletInfo();
-            RefreshConfirmations(); 
+            RefreshConfirmations();
 
             showingWalletInfo = false;
-        } 
+        }
 
         private void MainForm_Shown(object sender, EventArgs e)
         {
