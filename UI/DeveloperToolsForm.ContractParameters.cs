@@ -86,12 +86,16 @@ namespace Bhp.UI
 
         private void button4_Click(object sender, EventArgs e)
         {
-            context.Verifiable.Witnesses = context.GetWitnesses();
-            IInventory inventory = (IInventory)context.Verifiable;
-            RelayResultReason reason = Program.System.Blockchain.Ask<RelayResultReason>(inventory).Result;
+            if (!(context.Verifiable is Transaction tx))
+            {
+                MessageBox.Show("Only support to broadcast transaction.");
+                return;
+            }
+            tx.Witnesses = context.GetWitnesses();            
+            RelayResultReason reason = Program.System.Blockchain.Ask<RelayResultReason>(tx).Result;
             if (reason == RelayResultReason.Succeed)
             {
-                InformationBox.Show(inventory.Hash.ToString(), Strings.RelaySuccessText, Strings.RelaySuccessTitle);
+                InformationBox.Show(tx.Hash.ToString(), Strings.RelaySuccessText, Strings.RelaySuccessTitle);
             }
             else
             {

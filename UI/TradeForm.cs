@@ -152,9 +152,9 @@ namespace Bhp.UI
             }
             Program.CurrentWallet.Sign(context);
             if (context.Completed)
-            {
-                context.Verifiable.Witnesses = context.GetWitnesses();
+            {                
                 ContractTransaction tx = (ContractTransaction)context.Verifiable;
+                tx.Witnesses = context.GetWitnesses();
 
                 if (tx.Size > Transaction.MaxTransactionSize)
                 {
