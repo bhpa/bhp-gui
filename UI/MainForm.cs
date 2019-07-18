@@ -48,6 +48,9 @@ namespace Bhp.UI
         public MainForm(XDocument xdoc = null)
         {
             InitializeComponent();
+
+            toolStripProgressBar1.Maximum = (int)Blockchain.SecondsPerBlock;
+
             if (xdoc != null)
             {
                 Version version = Assembly.GetExecutingAssembly().GetName().Version;
