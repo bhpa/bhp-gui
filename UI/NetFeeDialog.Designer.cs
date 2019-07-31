@@ -31,26 +31,10 @@ namespace Bhp.UI
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(NetFeeDialog));
-            this.IsPriority = new System.Windows.Forms.CheckBox();
             this.button1 = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
             this.CostContext = new System.Windows.Forms.Label();
             this.SuspendLayout();
-            // 
-            // IsPriority
-            // 
-            this.IsPriority.AutoSize = true;
-            this.IsPriority.Checked = true;
-            this.IsPriority.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.IsPriority.Location = new System.Drawing.Point(75, 160);
-            this.IsPriority.Name = "IsPriority";
-            this.IsPriority.Size = new System.Drawing.Size(174, 16);
-            this.IsPriority.TabIndex = 0;
-            this.IsPriority.Text = global::Bhp.Properties.Strings.HighPriority;
-            this.IsPriority.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.IsPriority.UseVisualStyleBackColor = true;
-            this.IsPriority.Visible = false;
-            this.IsPriority.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
             // 
             // button1
             // 
@@ -92,18 +76,14 @@ namespace Bhp.UI
             this.Controls.Add(this.CostContext);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.button1);
-            this.Controls.Add(this.IsPriority);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "NetFeeDialog";
             this.Text = "Cost Warning";
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
-
-        public System.Windows.Forms.CheckBox IsPriority;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Label CostContext;

@@ -661,7 +661,7 @@ namespace Bhp.UI
                 using (InvokeContractDialog dialog = new InvokeContractDialog(itx))
                 {
                     if (dialog.ShowDialog() != DialogResult.OK) return;
-                    tx = dialog.GetTransaction(change_address, fee);
+                    tx = dialog.GetTransaction(fee, change_address);
                 }
             }
             Helper.SignAndShowInformation(tx);
@@ -707,7 +707,7 @@ namespace Bhp.UI
             using (InvokeContractDialog dialog = new InvokeContractDialog(tx))
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                tx = dialog.GetTransaction();
+                tx = dialog.GetTransaction(Fixed8.Zero);
             }
             Helper.SignAndShowInformation(tx);
         }
@@ -739,7 +739,7 @@ namespace Bhp.UI
             using (InvokeContractDialog dialog = new InvokeContractDialog(tx))
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                tx = dialog.GetTransaction();
+                tx = dialog.GetTransaction(Fixed8.Zero);
             }
             Helper.SignAndShowInformation(tx);
         }
@@ -751,7 +751,7 @@ namespace Bhp.UI
                 if (dialog.ShowDialog() != DialogResult.OK) return;
                 try
                 {
-                    Helper.SignAndShowInformation(dialog.GetTransaction());
+                    Helper.SignAndShowInformation(dialog.GetTransaction(Fixed8.Zero));
                 }
                 catch (Exception ex)
                 {
