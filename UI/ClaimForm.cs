@@ -37,7 +37,7 @@ namespace Bhp.UI
                     references.Add(reference);
             }
 
-            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+            using (StoreView snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 textBox2.Text = snapshot.CalculateBonus(references, height).ToString();
             }
@@ -45,7 +45,7 @@ namespace Bhp.UI
 
         private void ClaimForm_Load(object sender, EventArgs e)
         {
-            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+            using (StoreView snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 Fixed8 bonus_available = snapshot.CalculateBonus(Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Reference));
                 textBox1.Text = bonus_available.ToString();
@@ -81,7 +81,7 @@ namespace Bhp.UI
             var address = combo_address.Text;
             try
             {
-                using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                using (StoreView snapshot = Blockchain.Singleton.GetSnapshot())
                     Helper.SignAndShowInformation(new ClaimTransaction
                     {
                         Claims = claims,

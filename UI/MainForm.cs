@@ -191,7 +191,7 @@ namespace Bhp.UI
                     backgroundWorker1.RunWorkerAsync();
                     //timer2.Enabled = true;
                 }
-                using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                using (StoreView snapshot = Blockchain.Singleton.GetSnapshot())
                     foreach (var i in Program.CurrentWallet.GetTransactions().Select(p => snapshot.Transactions.TryGet(p)).Where(p => p.Transaction != null).Select(p => new
                     {
                         p.Transaction,
@@ -341,7 +341,7 @@ namespace Bhp.UI
                 if (Program.CurrentWallet.WalletHeight <= Blockchain.Singleton.Height + 1)
                 {
                     if (balance_changed)
-                        using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                        using (StoreView snapshot = Blockchain.Singleton.GetSnapshot())
                         {
                             IEnumerable<Coin> coins = Program.CurrentWallet?.GetCoins().Where(p => !p.State.HasFlag(CoinState.Spent)) ?? Enumerable.Empty<Coin>();
                             Fixed8 bonus_available = snapshot.CalculateBonus(Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Reference));
@@ -1143,7 +1143,7 @@ namespace Bhp.UI
                 if (Program.CurrentWallet.WalletHeight <= Blockchain.Singleton.Height + 1)
                 {
                     if (balance_changed)
-                        using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                        using (StoreView snapshot = Blockchain.Singleton.GetSnapshot())
                         {
                             Fixed8 bonus = bonus_available + bonus_unavailable;
                             var assets = coins.GroupBy(p => p.Output.AssetId, (k, g) => new
@@ -1347,7 +1347,7 @@ namespace Bhp.UI
         {
             while (IsDisposed == false && WindowsClosed == false)
             {
-                using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                using (StoreView snapshot = Blockchain.Singleton.GetSnapshot())
                 {
                     coins = Program.CurrentWallet?.GetCoins().Where(p => !p.State.HasFlag(CoinState.Spent)) ?? Enumerable.Empty<Coin>();
                     bonus_available = snapshot.CalculateBonus(Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Reference));
