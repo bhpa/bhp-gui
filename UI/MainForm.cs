@@ -1290,26 +1290,27 @@ namespace Bhp.UI
                             sb.EmitAppCall(script_hash, "name");
                             script = sb.ToArray();
                         }
-                        ApplicationEngine engine = ApplicationEngine.Run(script);
-                        if (engine.State.HasFlag(VMState.FAULT)) continue;
-                        string name = engine.ResultStack.Pop().GetString();
-                        byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
-                        BigInteger amount = ((VMArray)engine.ResultStack.Pop()).Aggregate(BigInteger.Zero, (x, y) => x + y.GetBigInteger());
-                        if (amount == 0)
+                        using (ApplicationEngine engine = ApplicationEngine.Run(script))
                         {
-                            listView2.Items.RemoveByKey(script_hash.ToString());
-                            continue;
-                        }
-                        BigDecimal balance = new BigDecimal(amount, decimals);
-                        string value_text = balance.ToString();
-                        if (listView2.Items.ContainsKey(script_hash.ToString()))
-                        {
-                            listView2.Items[script_hash.ToString()].SubItems["value"].Text = value_text;
-                        }
-                        else
-                        {
-                            listView2.Items.Add(new ListViewItem(new[]
+                            if (engine.State.HasFlag(VMState.FAULT)) continue;
+                            string name = engine.ResultStack.Pop().GetString();
+                            byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
+                            BigInteger amount = ((VMArray)engine.ResultStack.Pop()).Aggregate(BigInteger.Zero, (x, y) => x + y.GetBigInteger());
+                            if (amount == 0)
                             {
+                                listView2.Items.RemoveByKey(script_hash.ToString());
+                                continue;
+                            }
+                            BigDecimal balance = new BigDecimal(amount, decimals);
+                            string value_text = balance.ToString();
+                            if (listView2.Items.ContainsKey(script_hash.ToString()))
+                            {
+                                listView2.Items[script_hash.ToString()].SubItems["value"].Text = value_text;
+                            }
+                            else
+                            {
+                                listView2.Items.Add(new ListViewItem(new[]
+                                {
                                 new ListViewItem.ListViewSubItem
                                 {
                                     Name = "name",
@@ -1332,10 +1333,11 @@ namespace Bhp.UI
                                     Text = $"ScriptHash:{script_hash}"
                                 }
                             }, -1, listView2.Groups["checked"])
-                            {
-                                Name = script_hash.ToString(),
-                                UseItemStyleForSubItems = false
-                            });
+                                {
+                                    Name = script_hash.ToString(),
+                                    UseItemStyleForSubItems = false
+                                });
+                            }
                         }
                     }
                     check_brc20_balance = false;
