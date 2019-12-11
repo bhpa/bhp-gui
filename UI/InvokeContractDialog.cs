@@ -35,7 +35,7 @@ namespace Bhp.UI
 
         public InvocationTransaction GetTransaction(Fixed8 fee, UInt160 Change_Address = null)
         {
-            if (tx.Size > 1024)               
+            if (tx.Size > 1024)
             {
                 Fixed8 sumFee = Fixed8.FromDecimal(tx.Size * 0.00001m) + Fixed8.FromDecimal(0.001m);
                 if (fee < sumFee)
@@ -57,11 +57,11 @@ namespace Bhp.UI
                 return result;
             }
             else
-            {                
+            {
                 return null;
             }
         }
-        
+
         private void UpdateParameters()
         {
             parameters = new[]
@@ -86,7 +86,7 @@ namespace Bhp.UI
             {
                 for (int i = parameters.Length - 1; i >= 0; i--)
                     sb.EmitPush(parameters[i]);
-                sb.EmitPush(script_hash);                
+                sb.EmitPush(script_hash);
                 sb.EmitSysCall("System.Contract.Call");
                 textBox6.Text = sb.ToArray().ToHexString();
             }
@@ -145,24 +145,26 @@ namespace Bhp.UI
             if (tx.Inputs == null) tx.Inputs = new CoinReference[0];
             if (tx.Outputs == null) tx.Outputs = new TransactionOutput[0];
             if (tx.Witnesses == null) tx.Witnesses = new Witness[0];
-            ApplicationEngine engine = ApplicationEngine.Run(tx.Script, tx, testMode: true);
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"VM State: {engine.State}");
-            sb.AppendLine($"Gas Consumed: {engine.GasConsumed}");
-            sb.AppendLine($"Evaluation Stack: {new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()))}");
-            textBox7.Text = sb.ToString();
-            if (!engine.State.HasFlag(VMState.FAULT))
+            using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, tx, testMode: true))
             {
-                tx.Gas =  Fixed8.Parse((engine.GasConsumed - 10).ToString());
-                if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
-                tx.Gas = tx.Gas.Ceiling();
-                Fixed8 fee = tx.Gas;
-                label7.Text = fee + " gas";
-                button3.Enabled = true;
-            }
-            else
-            {
-                MessageBox.Show(Strings.ExecutionFailed);
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine($"VM State: {engine.State}");
+                sb.AppendLine($"Gas Consumed: {engine.GasConsumed}");
+                sb.AppendLine($"Evaluation Stack: {new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()))}");
+                textBox7.Text = sb.ToString();
+                if (!engine.State.HasFlag(VMState.FAULT))
+                {
+                    tx.Gas = Fixed8.Parse((engine.GasConsumed - 10).ToString());
+                    if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
+                    tx.Gas = tx.Gas.Ceiling();
+                    Fixed8 fee = tx.Gas;
+                    label7.Text = fee + " gas";
+                    button3.Enabled = true;
+                }
+                else
+                {
+                    MessageBox.Show(Strings.ExecutionFailed);
+                }
             }
         }
 
