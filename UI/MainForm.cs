@@ -1,5 +1,6 @@
 ﻿using Akka.Actor;
 using Bhp.BhpExtensions;
+using Bhp.BhpExtensions.RPC;
 using Bhp.BhpExtensions.Transactions;
 using Bhp.Cryptography;
 using Bhp.IO;
@@ -551,6 +552,11 @@ namespace Bhp.UI
             using (CreateWalletDialog dialog = new CreateWalletDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
+                if (!RpcExtension.VerifyPW(dialog.Password))
+                {
+                    MessageBox.Show($"password max length {RpcExtension.MaxPWLength}");
+                    return;
+                }
                 BRC6Wallet wallet = new BRC6Wallet(GetIndexer(), dialog.WalletPath);
                 wallet.Unlock(dialog.Password);
                 wallet.CreateAccount();
@@ -566,6 +572,11 @@ namespace Bhp.UI
             using (OpenWalletDialog dialog = new OpenWalletDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
+                if (!RpcExtension.VerifyPW(dialog.Password))
+                {
+                    MessageBox.Show($"password max length {RpcExtension.MaxPWLength}");
+                    return;
+                }
                 string path = dialog.WalletPath;
                 Wallet wallet;
                 if (Path.GetExtension(path) == ".db3")
@@ -627,6 +638,11 @@ namespace Bhp.UI
             using (ChangePasswordDialog dialog = new ChangePasswordDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
+                if (!RpcExtension.VerifyPW(dialog.OldPassword) || !RpcExtension.VerifyPW(dialog.NewPassword))
+                {
+                    MessageBox.Show($"password max length {RpcExtension.MaxPWLength}");
+                    return;
+                }
                 if (((UserWallet)Program.CurrentWallet).ChangePassword(dialog.OldPassword, dialog.NewPassword))
                     MessageBox.Show(Strings.ChangePasswordSuccessful);
                 else
