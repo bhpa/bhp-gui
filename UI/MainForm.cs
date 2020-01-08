@@ -233,6 +233,8 @@ namespace Bhp.UI
         WalletTxQueue txQueue = new WalletTxQueue();
         private void AddTxToQueue(Transaction tx, uint height, uint Time)
         {
+            if (!showTransactionHistoryToolStripMenuItem.Checked) return;
+
             DateTime dateTime = DateTime.Now;
             if (IsShowTx(Time, out dateTime))
             {
@@ -1388,6 +1390,8 @@ namespace Bhp.UI
         bool showingWalletInfo = false;
         private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
+            if (!showTransactionHistoryToolStripMenuItem.Checked) return;
+
             if (showingWalletInfo)
             {
                 return;
@@ -1444,6 +1448,11 @@ namespace Bhp.UI
             {
                 dialog.ShowDialog();
             }
+        }
+
+        private void showTransactionHistoryToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            showTransactionHistoryToolStripMenuItem.Checked = !showTransactionHistoryToolStripMenuItem.Checked;
         }
     }
 }

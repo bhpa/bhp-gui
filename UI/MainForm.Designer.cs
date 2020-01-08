@@ -121,6 +121,8 @@
             this.contextMenuStrip3 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
+            this.showTransactionHistoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -210,7 +212,9 @@
             this.toolStripSeparator5,
             this.签名SToolStripMenuItem,
             this.toolStripSeparator13,
-            this.claToolStripMenuItem});
+            this.claToolStripMenuItem,
+            this.toolStripSeparator4,
+            this.showTransactionHistoryToolStripMenuItem});
             resources.ApplyResources(this.交易TToolStripMenuItem, "交易TToolStripMenuItem");
             this.交易TToolStripMenuItem.Name = "交易TToolStripMenuItem";
             // 
@@ -760,6 +764,19 @@
             this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_DoWork);
             this.backgroundWorker1.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker1_ProgressChanged);
             // 
+            // toolStripSeparator4
+            // 
+            this.toolStripSeparator4.Name = "toolStripSeparator4";
+            resources.ApplyResources(this.toolStripSeparator4, "toolStripSeparator4");
+            // 
+            // showTransactionHistoryToolStripMenuItem
+            // 
+            this.showTransactionHistoryToolStripMenuItem.Checked = true;
+            this.showTransactionHistoryToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.showTransactionHistoryToolStripMenuItem.Name = "showTransactionHistoryToolStripMenuItem";
+            resources.ApplyResources(this.showTransactionHistoryToolStripMenuItem, "showTransactionHistoryToolStripMenuItem");
+            this.showTransactionHistoryToolStripMenuItem.Click += new System.EventHandler(this.showTransactionHistoryToolStripMenuItem_Click);
+            // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
@@ -881,6 +898,8 @@
         private System.Windows.Forms.ToolStripMenuItem destroyToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel lb_tx_time;
         private System.Windows.Forms.ToolStripMenuItem 零钱规整AToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
+        private System.Windows.Forms.ToolStripMenuItem showTransactionHistoryToolStripMenuItem;
     }
 }
 
