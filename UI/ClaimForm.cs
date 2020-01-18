@@ -3,7 +3,6 @@ using Bhp.IO.Actors;
 using Bhp.Ledger;
 using Bhp.Network.P2P.Payloads;
 using Bhp.Persistence;
-using Bhp.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,7 +36,7 @@ namespace Bhp.UI
                     references.Add(reference);
             }
 
-            using (StoreView snapshot = Blockchain.Singleton.GetSnapshot())
+            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 textBox2.Text = snapshot.CalculateBonus(references, height).ToString();
             }
@@ -45,15 +44,13 @@ namespace Bhp.UI
 
         private void ClaimForm_Load(object sender, EventArgs e)
         {
-            using (StoreView snapshot = Blockchain.Singleton.GetSnapshot())
+            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 Fixed8 bonus_available = snapshot.CalculateBonus(Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Reference));
                 textBox1.Text = bonus_available.ToString();
                 if (bonus_available == Fixed8.Zero) button1.Enabled = false;
                 CalculateBonusUnavailable(snapshot.Height + 1);
             }
-            BindAddresses();
-
             actor = Program.System.ActorSystem.ActorOf(EventWrapper<Blockchain.PersistCompleted>.Props(Blockchain_PersistCompleted));
         }
 
@@ -78,55 +75,32 @@ namespace Bhp.UI
         {
             CoinReference[] claims = Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Reference).ToArray();
             if (claims.Length == 0) return;
-            var address = combo_address.Text;
-            try
+            CoinReference[] getClaims;
+            if (claims.Length > 50)
             {
-                using (StoreView snapshot = Blockchain.Singleton.GetSnapshot())
-                    Helper.SignAndShowInformation(new ClaimTransaction
+                getClaims = claims.Take(50).ToArray();
+            }
+            else
+            {
+                getClaims = claims;
+            }
+            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                Helper.SignAndShowInformation(new ClaimTransaction
+                {
+                    Claims = getClaims,
+                    Attributes = new TransactionAttribute[0],
+                    Inputs = new CoinReference[0],
+                    Outputs = new[]
                     {
-                        Claims = claims,
-                        Attributes = new TransactionAttribute[0],
-                        Inputs = new CoinReference[0],
-                        Outputs = new[]
-                        {
                         new TransactionOutput
                         {
                             AssetId = Blockchain.UtilityToken.Hash,
-                            Value = snapshot.CalculateBonus(claims),
-                            ScriptHash = address.ToScriptHash()
+                            Value = snapshot.CalculateBonus(getClaims),
+                            ScriptHash = Program.CurrentWallet.GetChangeAddress()
                         }
                     }
-                    });
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-            }
-
+                });
             Close();
-        }
-
-
-        private void BindAddresses()
-        {
-            var accounts = Program.CurrentWallet.GetAccounts();
-            var addresses = accounts.Select(c => c.ScriptHash.ToAddress()).ToArray();
-            combo_address.Items.Clear();
-            combo_address.Items.AddRange(addresses);
-            combo_address.SelectedIndex = 0;
-        }
-
-        private void combo_address_TextChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                combo_address.Text.ToScriptHash();
-                button1.Enabled = true;
-            }
-            catch (FormatException)
-            {
-                button1.Enabled = false;
-            }
         }
     }
 }

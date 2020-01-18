@@ -50,8 +50,8 @@ namespace Bhp.Properties
 
         public PathsSettings(IConfigurationSection section)
         {
-            this.Chain = string.Format(section.GetSection("Chain").Value, ProtocolSettings.Default.Magic.ToString("X8"));
-            this.Index = string.Format(section.GetSection("Index").Value, ProtocolSettings.Default.Magic.ToString("X8"));
+            this.Chain = string.Format(section.GetSection("Chain").Value, Message.Magic.ToString("X8"));
+            this.Index = string.Format(section.GetSection("Index").Value, Message.Magic.ToString("X8"));
             this.CertCache = section.GetSection("CertCache").Value;
         }
     }
@@ -84,11 +84,11 @@ namespace Bhp.Properties
 
     internal class ContractSettings
     {
-        public UInt160[] BRC5 { get; }
+        public UInt160[] BRC20 { get; }
 
         public ContractSettings(IConfigurationSection section)
         {
-            this.BRC5 = section.GetSection("BRC5").GetChildren().Select(p => UInt160.Parse(p.Value)).ToArray();
+            this.BRC20 = section.GetSection("BRC20").GetChildren().Select(p => UInt160.Parse(p.Value)).ToArray();
         }
     }
 
@@ -99,9 +99,10 @@ namespace Bhp.Properties
         public UnlockWalletSettings(IConfigurationSection section)
         {
             if (section.Exists())
-            {
+            {                
                 this.IsBhpFee = bool.Parse(section.GetSection("IsBhpFee").Value);
             }
         }
     }
+
 }

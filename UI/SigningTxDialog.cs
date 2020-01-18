@@ -47,8 +47,9 @@ namespace Bhp.UI
                 return;
             }
             tx.Witnesses = context.GetWitnesses();
-            Program.System.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
-            InformationBox.Show(tx.Hash.ToString(), Strings.RelaySuccessText, Strings.RelaySuccessTitle);
+            IInventory inventory = (IInventory)context.Verifiable;
+            Program.System.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
+            InformationBox.Show(inventory.Hash.ToString(), Strings.RelaySuccessText, Strings.RelaySuccessTitle);
             button4.Visible = false;
         }
     }

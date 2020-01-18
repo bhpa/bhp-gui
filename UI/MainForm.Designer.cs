@@ -47,8 +47,10 @@
             this.签名SToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator13 = new System.Windows.Forms.ToolStripSeparator();
             this.claToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
+            this.showTransactionHistoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.高级AToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.提取小蚁币CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.提取BHP币CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.requestCertificateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.注册资产RToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -61,6 +63,7 @@
             this.signDataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
             this.帮助HToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.查看帮助VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.官网WToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -121,8 +124,7 @@
             this.contextMenuStrip3 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
-            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
-            this.showTransactionHistoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.backgroundWorker2 = new System.ComponentModel.BackgroundWorker();
             this.menuStrip1.SuspendLayout();
             this.contextMenuStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -252,10 +254,23 @@
             resources.ApplyResources(this.claToolStripMenuItem, "claToolStripMenuItem");
             this.claToolStripMenuItem.Click += new System.EventHandler(this.claToolStripMenuItem_Click);
             // 
+            // toolStripSeparator4
+            // 
+            this.toolStripSeparator4.Name = "toolStripSeparator4";
+            resources.ApplyResources(this.toolStripSeparator4, "toolStripSeparator4");
+            // 
+            // showTransactionHistoryToolStripMenuItem
+            // 
+            this.showTransactionHistoryToolStripMenuItem.Checked = true;
+            this.showTransactionHistoryToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.showTransactionHistoryToolStripMenuItem.Name = "showTransactionHistoryToolStripMenuItem";
+            resources.ApplyResources(this.showTransactionHistoryToolStripMenuItem, "showTransactionHistoryToolStripMenuItem");
+            this.showTransactionHistoryToolStripMenuItem.Click += new System.EventHandler(this.showTransactionHistoryToolStripMenuItem_Click);
+            // 
             // 高级AToolStripMenuItem
             // 
             this.高级AToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.提取小蚁币CToolStripMenuItem,
+            this.提取BHP币CToolStripMenuItem,
             this.toolStripSeparator7,
             this.requestCertificateToolStripMenuItem,
             this.注册资产RToolStripMenuItem,
@@ -267,15 +282,16 @@
             this.选举EToolStripMenuItem,
             this.signDataToolStripMenuItem,
             this.toolStripSeparator9,
-            this.optionsToolStripMenuItem});
+            this.optionsToolStripMenuItem,
+            this.toolStripMenuItem2});
             this.高级AToolStripMenuItem.Name = "高级AToolStripMenuItem";
             resources.ApplyResources(this.高级AToolStripMenuItem, "高级AToolStripMenuItem");
             // 
-            // 提取小蚁币CToolStripMenuItem
+            // 提取BHP币CToolStripMenuItem
             // 
-            resources.ApplyResources(this.提取小蚁币CToolStripMenuItem, "提取小蚁币CToolStripMenuItem");
-            this.提取小蚁币CToolStripMenuItem.Name = "提取小蚁币CToolStripMenuItem";
-            this.提取小蚁币CToolStripMenuItem.Click += new System.EventHandler(this.提取小蚁币CToolStripMenuItem_Click);
+            resources.ApplyResources(this.提取BHP币CToolStripMenuItem, "提取BHP币CToolStripMenuItem");
+            this.提取BHP币CToolStripMenuItem.Name = "提取BHP币CToolStripMenuItem";
+            this.提取BHP币CToolStripMenuItem.Click += new System.EventHandler(this.提取BHP币CToolStripMenuItem_Click);
             // 
             // toolStripSeparator7
             // 
@@ -344,6 +360,12 @@
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
             resources.ApplyResources(this.optionsToolStripMenuItem, "optionsToolStripMenuItem");
             this.optionsToolStripMenuItem.Click += new System.EventHandler(this.optionsToolStripMenuItem_Click);
+            // 
+            // toolStripMenuItem2
+            // 
+            this.toolStripMenuItem2.Name = "toolStripMenuItem2";
+            resources.ApplyResources(this.toolStripMenuItem2, "toolStripMenuItem2");
+            this.toolStripMenuItem2.Click += new System.EventHandler(this.toolStripMenuItem2_Click_1);
             // 
             // 帮助HToolStripMenuItem
             // 
@@ -764,18 +786,12 @@
             this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_DoWork);
             this.backgroundWorker1.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker1_ProgressChanged);
             // 
-            // toolStripSeparator4
+            // backgroundWorker2
             // 
-            this.toolStripSeparator4.Name = "toolStripSeparator4";
-            resources.ApplyResources(this.toolStripSeparator4, "toolStripSeparator4");
-            // 
-            // showTransactionHistoryToolStripMenuItem
-            // 
-            this.showTransactionHistoryToolStripMenuItem.Checked = true;
-            this.showTransactionHistoryToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.showTransactionHistoryToolStripMenuItem.Name = "showTransactionHistoryToolStripMenuItem";
-            resources.ApplyResources(this.showTransactionHistoryToolStripMenuItem, "showTransactionHistoryToolStripMenuItem");
-            this.showTransactionHistoryToolStripMenuItem.Click += new System.EventHandler(this.showTransactionHistoryToolStripMenuItem_Click);
+            this.backgroundWorker2.WorkerReportsProgress = true;
+            this.backgroundWorker2.WorkerSupportsCancellation = true;
+            this.backgroundWorker2.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker2_DoWork);
+            this.backgroundWorker2.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker2_ProgressChanged);
             // 
             // MainForm
             // 
@@ -856,7 +872,7 @@
         private System.Windows.Forms.ToolStripMenuItem importWIFToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem importCertificateToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
-        private System.Windows.Forms.ToolStripMenuItem 提取小蚁币CToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem 提取BHP币CToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
         private System.Windows.Forms.ToolStripMenuItem 选举EToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 重建钱包数据库RToolStripMenuItem;
@@ -898,6 +914,8 @@
         private System.Windows.Forms.ToolStripMenuItem destroyToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel lb_tx_time;
         private System.Windows.Forms.ToolStripMenuItem 零钱规整AToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem2;
+        private System.ComponentModel.BackgroundWorker backgroundWorker2;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
         private System.Windows.Forms.ToolStripMenuItem showTransactionHistoryToolStripMenuItem;
     }

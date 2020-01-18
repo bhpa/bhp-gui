@@ -67,15 +67,14 @@ namespace Bhp.UI
             button1.Enabled = txOutListBox1.ItemCount > 0;
         }
 
-        //BHP
         TransactionContract transactionContract = new TransactionContract();
         private void button1_Click(object sender, EventArgs e)
         {
             ContractTransaction tx = transactionContract.MakeTransaction(Program.CurrentWallet, new ContractTransaction
             {
                 Outputs = txOutListBox1.Items.Select(p => p.ToTxOutput()).ToArray()
-            });
-            if (tx == null)
+            });  
+            if(tx == null)
             {
                 MessageBox.Show(Strings.InsufficientFunds);
                 return;
@@ -173,7 +172,7 @@ namespace Bhp.UI
             }
             Program.CurrentWallet.Sign(context);
             if (context.Completed)
-            {                
+            {
                 ContractTransaction tx = (ContractTransaction)context.Verifiable;
                 tx.Witnesses = context.GetWitnesses();
 
