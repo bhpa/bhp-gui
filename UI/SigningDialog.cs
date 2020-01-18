@@ -25,6 +25,7 @@ namespace Bhp.UI
             }
         }
 
+
         public SigningDialog()
         {
             InitializeComponent();

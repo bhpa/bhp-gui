@@ -115,38 +115,11 @@ namespace Bhp.Properties {
         }
         
         /// <summary>
-        ///   查找类似 Cancel 的本地化字符串。
-        /// </summary>
-        internal static string Cancel {
-            get {
-                return ResourceManager.GetString("Cancel", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   查找类似 Change password successful. 的本地化字符串。
         /// </summary>
         internal static string ChangePasswordSuccessful {
             get {
                 return ResourceManager.GetString("ChangePasswordSuccessful", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   查找类似 Confirm 的本地化字符串。
-        /// </summary>
-        internal static string Confirm {
-            get {
-                return ResourceManager.GetString("Confirm", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   查找类似 will be consumed, confirm? 的本地化字符串。
-        /// </summary>
-        internal static string CostTips {
-            get {
-                return ResourceManager.GetString("CostTips", resourceCulture);
             }
         }
         
@@ -228,15 +201,6 @@ namespace Bhp.Properties {
         internal static string Failed {
             get {
                 return ResourceManager.GetString("Failed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   查找类似 High Priority Transaction 的本地化字符串。
-        /// </summary>
-        internal static string HighPriority {
-            get {
-                return ResourceManager.GetString("HighPriority", resourceCulture);
             }
         }
         

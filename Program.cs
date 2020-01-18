@@ -15,6 +15,7 @@ namespace Bhp
         public static BhpSystem System;
         public static Wallet CurrentWallet;
         public static MainForm MainForm;
+        public static WalletIndexer indexer;//by bhp
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
@@ -100,10 +101,10 @@ namespace Bhp
                     }
                     return;
                 }
-            }             
-            
+            }
+
             //if (!InstallCertificate()) return;
-           
+
             using (LevelDBStore store = new LevelDBStore(Settings.Default.Paths.Chain))
             using (System = new BhpSystem(store))
             {

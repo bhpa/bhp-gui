@@ -23,7 +23,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -45,14 +44,11 @@ namespace Bhp.UI
 
         private DateTime persistence_time = DateTime.MinValue;
         private IActorRef actor;
-        private WalletIndexer indexer;
+        //private WalletIndexer indexer;
 
         public MainForm(XDocument xdoc = null)
         {
             InitializeComponent();
-
-            toolStripProgressBar1.Maximum = (int)Blockchain.SecondsPerBlock;
-
             if (xdoc != null)
             {
                 Version version = Assembly.GetExecutingAssembly().GetName().Version;
@@ -150,6 +146,7 @@ namespace Bhp.UI
                                 Text = tx.Type.ToString()
                             }
                             //end
+
                         }, -1)
                 {
                     Name = txid,
@@ -192,21 +189,30 @@ namespace Bhp.UI
                     backgroundWorker1.RunWorkerAsync();
                     //timer2.Enabled = true;
                 }
-                using (StoreView snapshot = Blockchain.Singleton.GetSnapshot())
-                    foreach (var i in Program.CurrentWallet.GetTransactions().Select(p => snapshot.Transactions.TryGet(p)).Where(p => p.Transaction != null).Select(p => new
-                    {
-                        p.Transaction,
-                        p.BlockIndex,
-                        Time = snapshot.GetHeader(p.BlockIndex).Timestamp
-                    }).OrderBy(p => p.Time))
-                    {
-                        AddTransaction(i.Transaction, i.BlockIndex, i.Time);
-                    }
+                if (backgroundWorker2.IsBusy == false)
+                {
+                    backgroundWorker2.RunWorkerAsync();
+                }
+                if (showTransactionHistoryToolStripMenuItem.Checked)
+                {
+                    using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+                        foreach (var i in Program.CurrentWallet.GetTransactions()?.Select(p => snapshot.Transactions.TryGet(p)).Where(p => p.Transaction != null).Select(p => new
+                        {
+                            p.Transaction,
+                            p.BlockIndex,
+                            Time = snapshot.GetHeader(p.BlockIndex).Timestamp
+                        }).OrderBy(p => p.Time))
+                        {
+                            DateTime dateTime = DateTime.Now;
+                            if (IsShowTx(i.Time, out dateTime))
+                                AddTransaction(i.Transaction, i.BlockIndex, i.Time);
+                        }
+                }
                 Program.CurrentWallet.WalletTransaction += CurrentWallet_WalletTransaction;
             }
             修改密码CToolStripMenuItem.Enabled = Program.CurrentWallet is UserWallet;
             交易TToolStripMenuItem.Enabled = Program.CurrentWallet != null;
-            提取小蚁币CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
+            提取BHP币CToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             signDataToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             requestCertificateToolStripMenuItem.Enabled = Program.CurrentWallet != null;
             注册资产RToolStripMenuItem.Enabled = Program.CurrentWallet != null;
@@ -256,11 +262,19 @@ namespace Bhp.UI
             }
         }
 
+        //private WalletIndexer GetIndexer()
+        //{
+        //    if (indexer is null)
+        //        indexer = new WalletIndexer(Settings.Default.Paths.Index);
+        //    return indexer;
+        //}
+
+        //by bhp
         private WalletIndexer GetIndexer()
         {
-            if (indexer is null)
-                indexer = new WalletIndexer(Settings.Default.Paths.Index);
-            return indexer;
+            if (Program.indexer is null)
+                Program.indexer = new WalletIndexer(Settings.Default.Paths.Index);
+            return Program.indexer;
         }
 
         private void RefreshConfirmations()
@@ -282,12 +296,7 @@ namespace Bhp.UI
         private void MainForm_Load(object sender, EventArgs e)
         {
             actor = Program.System.ActorSystem.ActorOf(EventWrapper<Blockchain.PersistCompleted>.Props(Blockchain_PersistCompleted));
-            ChannelsConfig config = new ChannelsConfig
-            {
-                Tcp = new IPEndPoint(IPAddress.Any, Settings.Default.P2P.Port),
-                WebSocket = new IPEndPoint(IPAddress.Any, Settings.Default.P2P.WsPort)
-            };
-            Program.System.StartNode(config);
+            Program.System.StartNode(Settings.Default.P2P.Port, Settings.Default.P2P.WsPort);
             ExtensionSettings.Default.WalletConfig.IsBhpFee = Settings.Default.UnlockWallet.IsBhpFee;//BHP
         }
 
@@ -298,6 +307,7 @@ namespace Bhp.UI
             {
                 WindowsClosed = true;
                 backgroundWorker1.CancelAsync();
+                backgroundWorker2.CancelAsync();
 
                 if (actor != null)
                     Program.System.ActorSystem.Stop(actor);
@@ -344,7 +354,7 @@ namespace Bhp.UI
                 if (Program.CurrentWallet.WalletHeight <= Blockchain.Singleton.Height + 1)
                 {
                     if (balance_changed)
-                        using (StoreView snapshot = Blockchain.Singleton.GetSnapshot())
+                        using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                         {
                             IEnumerable<Coin> coins = Program.CurrentWallet?.GetCoins().Where(p => !p.State.HasFlag(CoinState.Spent)) ?? Enumerable.Empty<Coin>();
                             Fixed8 bonus_available = snapshot.CalculateBonus(Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Reference));
@@ -681,7 +691,7 @@ namespace Bhp.UI
                 using (InvokeContractDialog dialog = new InvokeContractDialog(itx))
                 {
                     if (dialog.ShowDialog() != DialogResult.OK) return;
-                    tx = dialog.GetTransaction(fee, change_address);
+                    tx = dialog.GetTransaction(change_address, fee);
                 }
             }
             Helper.SignAndShowInformation(tx);
@@ -703,7 +713,7 @@ namespace Bhp.UI
             }
         }
 
-        private void 提取小蚁币CToolStripMenuItem_Click(object sender, EventArgs e)
+        private void 提取BHP币CToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Helper.Show<ClaimForm>();
         }
@@ -727,7 +737,7 @@ namespace Bhp.UI
             using (InvokeContractDialog dialog = new InvokeContractDialog(tx))
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                tx = dialog.GetTransaction(Fixed8.Zero);
+                tx = dialog.GetTransaction();
             }
             Helper.SignAndShowInformation(tx);
         }
@@ -737,14 +747,7 @@ namespace Bhp.UI
             using (IssueDialog dialog = new IssueDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                try
-                {
-                    Helper.SignAndShowInformation(dialog.GetTransaction());
-                }
-                catch (Exception ex)
-                {
-                    return;
-                }
+                Helper.SignAndShowInformation(dialog.GetTransaction());
             }
         }
 
@@ -759,7 +762,7 @@ namespace Bhp.UI
             using (InvokeContractDialog dialog = new InvokeContractDialog(tx))
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                tx = dialog.GetTransaction(Fixed8.Zero);
+                tx = dialog.GetTransaction();
             }
             Helper.SignAndShowInformation(tx);
         }
@@ -769,15 +772,7 @@ namespace Bhp.UI
             using (InvokeContractDialog dialog = new InvokeContractDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                try
-                {
-                    Helper.SignAndShowInformation(dialog.GetTransaction(Fixed8.Zero));
-                }
-                catch (Exception ex)
-                {
-                    return;
-                }
-
+                Helper.SignAndShowInformation(dialog.GetTransaction());
             }
         }
 
@@ -786,14 +781,7 @@ namespace Bhp.UI
             using (ElectionDialog dialog = new ElectionDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                try
-                {
-                    Helper.SignAndShowInformation(dialog.GetTransaction());
-                }
-                catch (Exception ex)
-                {
-                    return;
-                }
+                Helper.SignAndShowInformation(dialog.GetTransaction());
             }
         }
 
@@ -998,14 +986,7 @@ namespace Bhp.UI
             using (VotingDialog dialog = new VotingDialog(account.ScriptHash))
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
-                try
-                {
-                    Helper.SignAndShowInformation(dialog.GetTransaction());
-                }
-                catch (Exception ex)
-                {
-                    return;
-                }
+                Helper.SignAndShowInformation(dialog.GetTransaction());
             }
         }
 
@@ -1057,6 +1038,33 @@ namespace Bhp.UI
             string path = Path.Combine(Settings.Default.Paths.CertCache, $"{address}.cer");
             Process.Start(path);
         }
+
+        /*
+        private void 删除DToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            if (listView2.SelectedIndices.Count == 0) return;
+            var delete = listView2.SelectedItems.OfType<ListViewItem>().Select(p => p.Tag as AssetState).Where(p => p != null).Select(p => new
+            {
+                Asset = p,
+                Value = Program.CurrentWallet.GetAvailable(p.AssetId)
+            }).ToArray();
+            if (delete.Length == 0) return;
+            if (MessageBox.Show($"{Strings.DeleteAssetConfirmationMessage}\n"
+                + string.Join("\n", delete.Select(p => $"{p.Asset.GetName()}:{p.Value}"))
+                , Strings.DeleteConfirmation, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+                return;
+            ContractTransaction tx = Program.CurrentWallet.MakeTransaction(new ContractTransaction
+            {
+                Outputs = delete.Select(p => new TransactionOutput
+                {
+                    AssetId = p.Asset.AssetId,
+                    Value = p.Value,
+                    ScriptHash = RecycleScriptHash
+                }).ToArray()
+            }, fee: Fixed8.Zero);
+            Helper.SignAndShowInformation(tx);
+        }
+        */
 
         TransactionContract transactionContract = new TransactionContract();
         private void 删除DToolStripMenuItem1_Click(object sender, EventArgs e)
@@ -1161,7 +1169,7 @@ namespace Bhp.UI
                 if (Program.CurrentWallet.WalletHeight <= Blockchain.Singleton.Height + 1)
                 {
                     if (balance_changed)
-                        using (StoreView snapshot = Blockchain.Singleton.GetSnapshot())
+                        using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                         {
                             Fixed8 bonus = bonus_available + bonus_unavailable;
                             var assets = coins.GroupBy(p => p.Output.AssetId, (k, g) => new
@@ -1308,27 +1316,26 @@ namespace Bhp.UI
                             sb.EmitAppCall(script_hash, "name");
                             script = sb.ToArray();
                         }
-                        using (ApplicationEngine engine = ApplicationEngine.Run(script))
+                        ApplicationEngine engine = ApplicationEngine.Run(script);
+                        if (engine.State.HasFlag(VMState.FAULT)) continue;
+                        string name = engine.ResultStack.Pop().GetString();
+                        byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
+                        BigInteger amount = ((VMArray)engine.ResultStack.Pop()).Aggregate(BigInteger.Zero, (x, y) => x + y.GetBigInteger());
+                        if (amount == 0)
                         {
-                            if (engine.State.HasFlag(VMState.FAULT)) continue;
-                            string name = engine.ResultStack.Pop().GetString();
-                            byte decimals = (byte)engine.ResultStack.Pop().GetBigInteger();
-                            BigInteger amount = ((VMArray)engine.ResultStack.Pop()).Aggregate(BigInteger.Zero, (x, y) => x + y.GetBigInteger());
-                            if (amount == 0)
+                            listView2.Items.RemoveByKey(script_hash.ToString());
+                            continue;
+                        }
+                        BigDecimal balance = new BigDecimal(amount, decimals);
+                        string value_text = balance.ToString();
+                        if (listView2.Items.ContainsKey(script_hash.ToString()))
+                        {
+                            listView2.Items[script_hash.ToString()].SubItems["value"].Text = value_text;
+                        }
+                        else
+                        {
+                            listView2.Items.Add(new ListViewItem(new[]
                             {
-                                listView2.Items.RemoveByKey(script_hash.ToString());
-                                continue;
-                            }
-                            BigDecimal balance = new BigDecimal(amount, decimals);
-                            string value_text = balance.ToString();
-                            if (listView2.Items.ContainsKey(script_hash.ToString()))
-                            {
-                                listView2.Items[script_hash.ToString()].SubItems["value"].Text = value_text;
-                            }
-                            else
-                            {
-                                listView2.Items.Add(new ListViewItem(new[]
-                                {
                                 new ListViewItem.ListViewSubItem
                                 {
                                     Name = "name",
@@ -1351,11 +1358,10 @@ namespace Bhp.UI
                                     Text = $"ScriptHash:{script_hash}"
                                 }
                             }, -1, listView2.Groups["checked"])
-                                {
-                                    Name = script_hash.ToString(),
-                                    UseItemStyleForSubItems = false
-                                });
-                            }
+                            {
+                                Name = script_hash.ToString(),
+                                UseItemStyleForSubItems = false
+                            });
                         }
                     }
                     check_brc20_balance = false;
@@ -1367,22 +1373,12 @@ namespace Bhp.UI
         {
             while (IsDisposed == false && WindowsClosed == false)
             {
-                using (StoreView snapshot = Blockchain.Singleton.GetSnapshot())
+                using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                 {
                     coins = Program.CurrentWallet?.GetCoins().Where(p => !p.State.HasFlag(CoinState.Spent)) ?? Enumerable.Empty<Coin>();
                     bonus_available = snapshot.CalculateBonus(Program.CurrentWallet.GetUnclaimedCoins().Select(p => p.Reference));
                     bonus_unavailable = snapshot.CalculateBonus(coins.Where(p => p.State.HasFlag(CoinState.Confirmed) && p.Output.AssetId.Equals(Blockchain.GoverningToken.Hash)).Select(p => p.Reference), snapshot.Height + 1);
-
-                    WalletTx wtx = new WalletTx()
-                    {
-                        height = 0
-                    };
-
-                    if (txQueue.Pop(out wtx))
-                    {
-                        backgroundWorker1.ReportProgress(1, wtx);
-                    }
-                    Thread.Sleep(1000);
+                    Thread.Sleep(2000);
                 }
             }
         }
@@ -1390,31 +1386,7 @@ namespace Bhp.UI
         bool showingWalletInfo = false;
         private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            if (!showTransactionHistoryToolStripMenuItem.Checked) return;
 
-            if (showingWalletInfo)
-            {
-                return;
-            }
-
-            WalletTx wtx = (WalletTx)e.UserState;
-            DateTime dateTime;
-            IsShowTx(wtx.time, out dateTime);
-            lb_tx_time.Text = dateTime.ToString();
-            //Application.DoEvents();
-
-            //if (Program.CurrentWallet.WalletHeight + 10 < Blockchain.Singleton.Height)
-            //{
-            //    return;
-            //}
-
-            showingWalletInfo = true;
-
-            AddTransaction(wtx.tx, wtx.height, wtx.time);
-            ShowWalletInfo();
-            RefreshConfirmations();
-
-            showingWalletInfo = false;
         }
 
         private void MainForm_Shown(object sender, EventArgs e)
@@ -1448,6 +1420,60 @@ namespace Bhp.UI
             {
                 dialog.ShowDialog();
             }
+        }
+
+        private void toolStripMenuItem2_Click_1(object sender, EventArgs e)
+        {
+            using (FrmMakeTx dialog = new FrmMakeTx())
+            {
+                dialog.ShowDialog();
+            }
+        }
+
+        private void backgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
+        {
+            while (IsDisposed == false && WindowsClosed == false)
+            {
+                WalletTx wtx = new WalletTx()
+                {
+                    height = 0
+                };
+
+                if (txQueue.Pop(out wtx))
+                {
+                    backgroundWorker2.ReportProgress(1, wtx);
+                }
+                Thread.Sleep(500);
+            }
+        }
+
+        private void backgroundWorker2_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            if (!showTransactionHistoryToolStripMenuItem.Checked) return;
+
+            if (showingWalletInfo)
+            {
+                return;
+            }
+
+            WalletTx wtx = (WalletTx)e.UserState;
+            DateTime dateTime;
+            IsShowTx(wtx.time, out dateTime);
+            lb_tx_time.Text = dateTime.ToString();
+            //Application.DoEvents();
+
+            //if (Program.CurrentWallet.WalletHeight + 10 < Blockchain.Singleton.Height)
+            //{
+            //    return;
+            //}
+
+            showingWalletInfo = true;
+
+            AddTransaction(wtx.tx, wtx.height, wtx.time);
+            ShowWalletInfo();
+            RefreshConfirmations();
+
+            showingWalletInfo = false;
         }
 
         private void showTransactionHistoryToolStripMenuItem_Click(object sender, EventArgs e)

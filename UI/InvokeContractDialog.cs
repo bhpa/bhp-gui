@@ -33,33 +33,31 @@ namespace Bhp.UI
             }
         }
 
-        public InvocationTransaction GetTransaction(Fixed8 fee, UInt160 Change_Address = null)
+        public InvocationTransaction GetTransaction()
         {
-            if (tx.Size > 1024)
+            Fixed8 fee = tx.Gas.Equals(Fixed8.Zero) ? net_fee : Fixed8.Zero;
+            return Program.CurrentWallet.MakeTransaction(new InvocationTransaction
             {
-                Fixed8 sumFee = Fixed8.FromDecimal(tx.Size * 0.00001m) + Fixed8.FromDecimal(0.001m);
-                if (fee < sumFee)
-                {
-                    fee = sumFee;
-                }
-            }
+                Version = tx.Version,
+                Script = tx.Script,
+                Gas = tx.Gas,
+                Attributes = tx.Attributes,
+                Inputs = tx.Inputs,
+                Outputs = tx.Outputs
+            }, fee: fee);
+        }
 
-            if (Helper.CostRemind(tx.Gas.Ceiling(), fee))
+        public InvocationTransaction GetTransaction(UInt160 change_address, Fixed8 fee)
+        {
+            return Program.CurrentWallet.MakeTransaction(new InvocationTransaction
             {
-                InvocationTransaction result = Program.CurrentWallet.MakeTransaction(new InvocationTransaction
-                {
-                    Version = tx.Version,
-                    Script = tx.Script,
-                    Gas = tx.Gas,
-                    Attributes = tx.Attributes,
-                    Outputs = tx.Outputs
-                }, change_address: Change_Address, fee: fee);
-                return result;
-            }
-            else
-            {
-                return null;
-            }
+                Version = tx.Version,
+                Script = tx.Script,
+                Gas = tx.Gas,
+                Attributes = tx.Attributes,
+                Inputs = tx.Inputs,
+                Outputs = tx.Outputs
+            }, change_address: change_address, fee: fee);
         }
 
         private void UpdateParameters()
@@ -84,10 +82,7 @@ namespace Bhp.UI
             if (parameters.Any(p => p.Value == null)) return;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                for (int i = parameters.Length - 1; i >= 0; i--)
-                    sb.EmitPush(parameters[i]);
-                sb.EmitPush(script_hash);
-                sb.EmitSysCall("System.Contract.Call");
+                sb.EmitAppCall(script_hash, parameters);
                 textBox6.Text = sb.ToArray().ToHexString();
             }
         }
@@ -145,26 +140,24 @@ namespace Bhp.UI
             if (tx.Inputs == null) tx.Inputs = new CoinReference[0];
             if (tx.Outputs == null) tx.Outputs = new TransactionOutput[0];
             if (tx.Witnesses == null) tx.Witnesses = new Witness[0];
-            using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, tx, testMode: true))
+            ApplicationEngine engine = ApplicationEngine.Run(tx.Script, tx, testMode: true);
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"VM State: {engine.State}");
+            sb.AppendLine($"Gas Consumed: {engine.GasConsumed}");
+            sb.AppendLine($"Evaluation Stack: {new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()))}");
+            textBox7.Text = sb.ToString();
+            if (!engine.State.HasFlag(VMState.FAULT))
             {
-                StringBuilder sb = new StringBuilder();
-                sb.AppendLine($"VM State: {engine.State}");
-                sb.AppendLine($"Gas Consumed: {engine.GasConsumed}");
-                sb.AppendLine($"Evaluation Stack: {new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()))}");
-                textBox7.Text = sb.ToString();
-                if (!engine.State.HasFlag(VMState.FAULT))
-                {
-                    tx.Gas = Fixed8.Parse((engine.GasConsumed - 10).ToString());
-                    if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
-                    tx.Gas = tx.Gas.Ceiling();
-                    Fixed8 fee = tx.Gas;
-                    label7.Text = fee + " gas";
-                    button3.Enabled = true;
-                }
-                else
-                {
-                    MessageBox.Show(Strings.ExecutionFailed);
-                }
+                tx.Gas = engine.GasConsumed - Fixed8.FromDecimal(10);
+                if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
+                tx.Gas = tx.Gas.Ceiling();
+                Fixed8 fee = tx.Gas.Equals(Fixed8.Zero) ? net_fee : tx.Gas;
+                label7.Text = fee + " gas";
+                button3.Enabled = true;
+            }
+            else
+            {
+                MessageBox.Show(Strings.ExecutionFailed);
             }
         }
 
@@ -202,7 +195,7 @@ namespace Bhp.UI
             JArray functions = (JArray)abi["functions"];
             JObject function = functions.First(p => p["name"].AsString() == method);
             JArray _params = (JArray)function["parameters"];
-            parameters_abi = _params.Select(p => new ContractParameter(p["type"].TryGetEnum<ContractParameterType>())).ToArray();
+            parameters_abi = _params.Select(p => new ContractParameter(p["type"].AsEnum<ContractParameterType>())).ToArray();
             textBox9.Text = string.Join(", ", _params.Select(p => p["name"].AsString()));
             button8.Enabled = parameters_abi.Length > 0;
             UpdateParameters();

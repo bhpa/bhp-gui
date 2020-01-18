@@ -67,18 +67,5 @@ namespace Bhp.UI
                 InformationBox.Show(context.ToString(), Strings.IncompletedSignatureMessage, Strings.IncompletedSignatureTitle);
             }
         }
-
-        public static bool CostRemind(Fixed8 SystemFee, Fixed8 NetFee)
-        {
-            NetFeeDialog frm = new NetFeeDialog(SystemFee, NetFee);
-            if (frm.ShowDialog() == DialogResult.OK)
-            {
-                return true;                
-            }
-            else
-            {
-                return false;
-            }
-        }
     }
 }

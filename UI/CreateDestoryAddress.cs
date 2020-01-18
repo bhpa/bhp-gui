@@ -19,8 +19,7 @@ namespace Bhp.UI
         {
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitPush(UInt160.Parse("0x5994faf58da993048021666b858b36b10ecdc718"));
-                sb.EmitSysCall("System.Contract.Call");
+                sb.EmitAppCall(UInt160.Parse("0x5994faf58da993048021666b858b36b10ecdc718"));
                 return Contract.Create(new[] { ContractParameterType.Signature }, sb.ToArray());
             }
         }
