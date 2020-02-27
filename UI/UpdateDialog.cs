@@ -1,4 +1,5 @@
-﻿using Bhp.Properties;
+﻿using Bhp.BhpExtensions.CertificateSign;
+using Bhp.Properties;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -34,6 +35,37 @@ namespace Bhp.UI
             progressBar1.Value = e.ProgressPercentage;
         }
 
+        //by bhp
+        private void Web_DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
+        {
+            if (e.Cancelled || e.Error != null) return;
+
+            if (!RSASign.GetAndVerifyZip())
+            {
+                progressBar1.Value = 0;
+                button1.Enabled = true;
+                button2.Enabled = true;
+                return;
+            }
+
+            DirectoryInfo di = new DirectoryInfo("update");
+            if (di.Exists) di.Delete(true);
+            di.Create();
+            ZipFile.ExtractToDirectory(download_path, di.Name);
+            FileSystemInfo[] fs = di.GetFileSystemInfos();
+            if (fs.Length == 1 && fs[0] is DirectoryInfo)
+            {
+                ((DirectoryInfo)fs[0]).MoveTo("update2");
+                di.Delete();
+                Directory.Move("update2", di.Name);
+            }
+            File.WriteAllBytes("update.bat", Resources.UpdateBat);
+            Close();
+            if (Program.MainForm != null) Program.MainForm.Close();
+            Process.Start("update.bat");
+        }
+
+        /*
         private void Web_DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
         {
             if (e.Cancelled || e.Error != null) return;
@@ -53,6 +85,7 @@ namespace Bhp.UI
             if (Program.MainForm != null) Program.MainForm.Close();
             Process.Start("update.bat");
         }
+        */
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
