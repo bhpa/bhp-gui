@@ -3,14 +3,15 @@ using Bhp.Ledger;
 using Bhp.Network.P2P.Payloads;
 using Bhp.Properties;
 using Bhp.SmartContract;
+using Bhp.UI.Wrappers;
 using Bhp.VM;
 using Bhp.Wallets;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using static Bhp.Network.RPC.RpcServer;
 
 namespace Bhp.UI
 {
@@ -22,7 +23,11 @@ namespace Bhp.UI
         private ContractParameter[] parameters;
         private ContractParameter[] parameters_abi;
 
-        private static readonly Fixed8 net_fee = Fixed8.FromDecimal(0.001m);
+        private List<TransactionAttributeWrapper> temp_signatures = new List<TransactionAttributeWrapper>();
+        /// <summary>
+        /// invoke 随机数
+        /// </summary>
+        private static readonly Random rand = new Random();
 
         public InvokeContractDialog(InvocationTransaction tx = null)
         {
@@ -33,29 +38,23 @@ namespace Bhp.UI
                 tabControl1.SelectedTab = tabPage_custom;
                 textBox6.Text = tx.Script.ToHexString();
             }
-            combo_witnessAbi.Items.AddRange(Program.CurrentWallet.GetAccounts().Select(p => p.Address).ToArray());
-            combo_witnessFunc.Items.AddRange(Program.CurrentWallet.GetAccounts().Select(p => p.Address).ToArray());
+            combo_sign.Items.AddRange(Program.CurrentWallet.GetAccounts().Select(p => p.Address).ToArray());
         }
 
         public InvocationTransaction GetInvokeTransaction()
         {
-            UInt160 WitnessAddress = null;
-            if (tabControl1.SelectedTab.Name == "tabPage_abi")
-            {
-                if (combo_witnessAbi.SelectedItem != null)
+            List<TransactionAttribute> attributes = new List<TransactionAttribute>();
+            byte[] timeStamp = System.Text.ASCIIEncoding.ASCII.GetBytes(DateTime.UtcNow.ToString("yyyyMMddHHmmssfff"));
+            byte[] nonce = new byte[8];
+            rand.NextBytes(nonce);
+            attributes.Add(
+                new TransactionAttribute()
                 {
-                    WitnessAddress = ((string)combo_witnessAbi.SelectedItem).ToScriptHash();                    
-                }
-            }
-            else if (tabControl1.SelectedTab.Name == "tabPage_func")
-            {
-                if (combo_witnessFunc.SelectedItem != null)
-                {
-                    WitnessAddress = ((string)combo_witnessFunc.SelectedItem).ToScriptHash();                    
-                }
-            }
+                    Usage = TransactionAttributeUsage.Remark,
+                    Data = timeStamp.Concat(nonce).ToArray()
+                });
+            tx.Attributes = tx.Attributes.Concat(attributes).ToArray();
 
-            Fixed8 fee = tx.Gas.Equals(Fixed8.Zero) ? net_fee : Fixed8.Zero;
             return Program.CurrentWallet.MakeTransaction(new InvocationTransaction
             {
                 Version = tx.Version,
@@ -64,24 +63,10 @@ namespace Bhp.UI
                 Attributes = tx.Attributes,
                 Inputs = tx.Inputs,
                 Outputs = tx.Outputs
-            }, from: WitnessAddress, fee: fee);
+            });
         }
 
-        public InvocationTransaction GetTransaction()
-        {
-            Fixed8 fee = tx.Gas.Equals(Fixed8.Zero) ? net_fee : Fixed8.Zero;
-            return Program.CurrentWallet.MakeTransaction(new InvocationTransaction
-            {
-                Version = tx.Version,
-                Script = tx.Script,
-                Gas = tx.Gas,
-                Attributes = tx.Attributes,
-                Inputs = tx.Inputs,
-                Outputs = tx.Outputs
-            }, fee: fee);
-        }
-
-        public InvocationTransaction GetTransaction(UInt160 change_address, Fixed8 fee)
+        public InvocationTransaction GetTransaction(UInt160 change_address = null, Fixed8 fee = default)
         {
             return Program.CurrentWallet.MakeTransaction(new InvocationTransaction
             {
@@ -170,46 +155,52 @@ namespace Bhp.UI
             if (tx == null) tx = new InvocationTransaction();
             tx.Version = 1;
             tx.Script = script;
-            if (tx.Attributes == null) tx.Attributes = new TransactionAttribute[0];
+            tx.Attributes = temp_signatures.Select(p => p.Unwrap()).ToArray();
             if (tx.Inputs == null) tx.Inputs = new CoinReference[0];
             if (tx.Outputs == null) tx.Outputs = new TransactionOutput[0];
             if (tx.Witnesses == null) tx.Witnesses = new Witness[0];
+            if (tx.Attributes != null)
+            {
+                try
+                {
+                    ContractParametersContext context;
+                    context = new ContractParametersContext(tx);
+                    Program.CurrentWallet.Sign(context);
+                    tx.Witnesses = context.GetWitnesses();
+                }
+                catch (InvalidOperationException)
+                {
+                    MessageBox.Show(Strings.UnsynchronizedBlock);
+                    return;
+                }
+            }
 
-            IScriptContainer container = tx;
-            CheckWitnessHashes checkWitnessHashes = null;
-            if (tabControl1.SelectedTab.Name == "tabPage_abi")
-            {
-                if (combo_witnessAbi.SelectedItem != null)
-                {
-                    UInt160 WitnessAddress = ((string)combo_witnessAbi.SelectedItem).ToScriptHash();
-                    checkWitnessHashes = new CheckWitnessHashes(new UInt160[] { WitnessAddress });
-                    container = checkWitnessHashes;
-                }
-            }
-            else if (tabControl1.SelectedTab.Name == "tabPage_func")
-            {
-                if (combo_witnessFunc.SelectedItem != null)
-                {
-                    UInt160 WitnessAddress = ((string)combo_witnessFunc.SelectedItem).ToScriptHash();
-                    checkWitnessHashes = new CheckWitnessHashes(new UInt160[] { WitnessAddress });
-                    container = checkWitnessHashes;
-                }
-            }
-            using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, container, testMode: true))
-            //using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, tx, testMode: true))
+            using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, tx, testMode: true))
             {
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine($"VM State: {engine.State}");
                 sb.AppendLine($"Gas Consumed: {engine.GasConsumed}");
                 sb.AppendLine($"Evaluation Stack: {new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()))}");
+                JObject notifications = engine.Service.Notifications.Select(q =>
+                {
+                    JObject notification = new JObject();
+                    notification["contract"] = q.ScriptHash.ToString();
+                    try
+                    {
+                        notification["state"] = q.State.ToParameter().ToJson();
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        notification["state"] = "error: recursive reference";
+                    }
+                    return notification;
+                }).ToArray();
+                sb.AppendLine($"Notifications: {notifications}");
                 textBox7.Text = sb.ToString();
                 if (!engine.State.HasFlag(VMState.FAULT))
                 {
-                    tx.Gas = engine.GasConsumed - Fixed8.FromDecimal(10);
-                    if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
-                    tx.Gas = tx.Gas.Ceiling();
-                    Fixed8 fee = tx.Gas.Equals(Fixed8.Zero) ? net_fee : tx.Gas;
-                    label7.Text = fee + " gas";
+                    tx.Gas = InvocationTransaction.GetGas(engine.GasConsumed);
+                    label7.Text = tx.Gas + " gas";
                     button3.Enabled = true;
                 }
                 else
@@ -258,6 +249,40 @@ namespace Bhp.UI
             button8.Enabled = parameters_abi.Length > 0;
             UpdateParameters();
             UpdateScript();
+        }
+
+        private void btn_add_Click(object sender, EventArgs e)
+        {
+            if (combo_sign.SelectedItem.ToString() == "")
+            {
+                MessageBox.Show("Please choose the address");
+                return;
+            }
+            var index = combo_sign.SelectedIndex;
+            temp_signatures.Add(new TransactionAttributeWrapper
+            {
+                Usage = TransactionAttributeUsage.Script,
+                Data = combo_sign.SelectedItem.ToString().ToScriptHash().ToArray()
+            });
+            MessageBox.Show("Success!");
+            combo_sign.Items.RemoveAt(index);
+            if (combo_sign.Items.Count > 0)
+            {
+                combo_sign.SelectedIndex = 0;
+            }
+            else
+            {
+                combo_sign.SelectedText = "";
+            }
+        }
+
+        private void btn_clear_Click(object sender, EventArgs e)
+        {
+            temp_signatures.Clear();
+            combo_sign.Items.Clear();
+            combo_sign.SelectedText = "";
+            combo_sign.Items.AddRange(Program.CurrentWallet.GetAccounts().Select(p => p.Address).ToArray());
+            MessageBox.Show("Success!");
         }
     }
 }
